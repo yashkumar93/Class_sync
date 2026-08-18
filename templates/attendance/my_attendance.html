@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}My Attendance{% endblock %}
+{% block content %}
+<div class="cs-page-header">
+  <h1><i class="bi bi-bar-chart me-2" style="color:var(--cs-primary);"></i>My Attendance</h1>
+  <div class="subtitle">Attendance breakdown across all enrolled courses</div>
+</div>
+
+<div class="row g-3">
+  {% for row in summary %}
+  <div class="col-md-6 col-xl-4">
+    <div class="cs-card">
+      <div class="cs-card-header">
+        <h6>{{ row.section.course.name }}</h6>
+        <span class="cs-badge neutral fs-sm">Sec {{ row.section.name }}</span>
+      </div>
+      <div class="cs-card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="text-muted fs-sm">{{ row.attended }} / {{ row.total_sessions }} classes attended</span>
+          <span class="fw-700" style="font-size:1.5rem;
+            {% if row.percentage >= 75 %}color:var(--cs-success);{% elif row.percentage >= 60 %}color:var(--cs-warning);{% else %}color:var(--cs-danger);{% endif %}">
+            {{ row.percentage }}%
+          </span>
+        </div>
+        <div class="cs-progress-bar">
+          <div class="cs-progress-fill {% if row.percentage >= 75 %}good{% elif row.percentage >= 60 %}warning{% else %}danger{% endif %}"
+               style="width:{{ row.percentage }}%;"></div>
+        </div>
+        {% if row.below_threshold %}
+          <div class="cs-alert danger" style="margin-top:0.75rem; margin-bottom:0; font-size:0.8rem;">
+            <i class="bi bi-exclamation-triangle"></i>
+            <div>
+              <strong>Threshold Alert</strong> — Your attendance is below the required minimum.
+              Attend more classes to avoid academic penalties.
+            </div>
+          </div>
+        {% endif %}
+        <div style="margin-top:0.75rem;">
+          <span class="text-muted fs-sm">Faculty: {{ row.section.faculty.get_full_name|default:"TBA" }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12">
+    <div class="cs-card cs-card-body text-center text-muted py-5">
+      <i class="bi bi-mortarboard" style="font-size:2.5rem; color:var(--cs-gray-400);"></i>
+      <p class="mt-2">Not enrolled in any sections yet.</p>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

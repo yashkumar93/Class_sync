@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Submissions — {{ assignment.title }}{% endblock %}
+{% block content %}
+<div class="cs-page-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+  <div>
+    <h1><i class="bi bi-file-earmark-check me-2" style="color:var(--cs-primary);"></i>Submission Dashboard</h1>
+    <div class="subtitle">{{ assignment.title }} &mdash; {{ assignment.section }}</div>
+  </div>
+  <div class="d-flex gap-2 flex-wrap align-items-center">
+    <span class="cs-badge success">{{ on_time|length }} On Time</span>
+    <span class="cs-badge warning">{{ late|length }} Late</span>
+    <span class="cs-badge danger">{{ missing_students|length }} Missing</span>
+    {% if assignment.is_past_due %}<span class="cs-badge neutral">Past Due</span>{% endif %}
+  </div>
+</div>
+
+{% if assignment.description %}
+<div class="cs-card" style="margin-bottom:1rem;">
+  <div class="cs-card-body fs-sm">
+    <strong>Description:</strong> {{ assignment.description }}
+    {% if assignment.attachment %}
+      &nbsp;&middot;&nbsp;
+      <a href="{{ assignment.attachment.url }}" target="_blank" class="text-primary">
+        <i class="bi bi-paperclip"></i> Attachment
+      </a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<div class="row g-3">
+  <!-- Submitted table -->
+  <div class="col-lg-8">
+    <div class="cs-card">
+      <div class="cs-card-header"><h5><i class="bi bi-check-circle me-2 text-success"></i>Submitted</h5></div>
+      <div class="cs-table-wrapper" style="border:none;box-shadow:none;border-radius:0;">
+        <table class="cs-table">
+          <thead><tr><th>Student</th><th>Roll No.</th><th>Submitted At</th><th>Status</th><th>File</th></tr></thead>
+          <tbody>
+          {% for sub in submitted %}
+          <tr>
+            <td class="fw-600">{{ sub.student.get_full_name }}</td>
+            <td>{{ sub.student.roll_number|default:"—" }}</td>
+            <td>{{ sub.submitted_at|date:"d M Y, H:i" }}</td>
+            <td>
+              {% if sub.is_late %}
+                <span class="cs-badge warning"><i class="bi bi-clock"></i> Late</span>
+              {% else %}
+                <span class="cs-badge success"><i class="bi bi-check"></i> On Time</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if sub.file %}
+              <a href="{{ sub.file.url }}" target="_blank" class="btn-cs-secondary" style="font-size:0.75rem; padding:0.2rem 0.5rem;">
+                <i class="bi bi-download"></i> Download
+              </a>
+              {% else %}
+              —
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="text-muted text-center py-3">No submissions yet.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Not submitted list -->
+  <div class="col-lg-4">
+    <div class="cs-card">
+      <div class="cs-card-header"><h5><i class="bi bi-x-circle me-2 text-danger"></i>Not Submitted</h5></div>
+      <div class="cs-card-body" style="padding:0.5rem;">
+        {% for student in missing_students %}
+        <div style="padding:0.6rem 0.75rem; border-bottom:1px solid var(--cs-gray-100);">
+          <div class="fw-600 fs-sm">{{ student.get_full_name }}</div>
+          <div class="fs-sm text-muted">{{ student.roll_number|default:student.username }}</div>
+        </div>
+        {% empty %}
+        <div class="text-muted text-center py-3 fs-sm">Everyone has submitted! 🎉</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

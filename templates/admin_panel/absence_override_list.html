@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Absences — Override{% endblock %}
+{% block content %}
+<div class="cs-page-header">
+  <h1><i class="bi bi-exclamation-circle me-2" style="color:var(--cs-warning);"></i>Absence Overrides</h1>
+  <div class="subtitle">Manual admin override for absence reassignment decisions.</div>
+</div>
+<div class="cs-table-wrapper">
+  <table class="cs-table">
+    <thead>
+      <tr><th>Date</th><th>Faculty</th><th>Class</th><th>Status</th><th>Proposed Sub</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+    {% for r in reports %}
+    <tr>
+      <td>{{ r.date }}</td>
+      <td class="fw-600">{{ r.faculty.get_full_name }}</td>
+      <td>{{ r.timetable_slot.section.course.name }} ({{ r.timetable_slot.section.name }})</td>
+      <td>
+        {% if r.status == 'reassigned' %}<span class="cs-badge success">Reassigned</span>
+        {% elif r.status == 'self_study' %}<span class="cs-badge warning">Self-Study</span>
+        {% elif r.status == 'pending_confirmation' %}<span class="cs-badge info">Pending</span>
+        {% else %}<span class="cs-badge neutral">{{ r.get_status_display }}</span>{% endif %}
+      </td>
+      <td>{{ r.proposed_substitute.get_full_name|default:"—" }}</td>
+      <td>
+        {% if r.status != 'reassigned' %}
+        <form method="post" action="{% url 'admin_panel:absence_override_action' r.pk %}" class="d-inline">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="self_study">
+          <button class="btn-cs-secondary" style="font-size:0.78rem;padding:0.3rem 0.7rem;" title="Force self-study">
+            <i class="bi bi-book"></i>
+          </button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6" class="text-muted text-center py-4">No absence reports.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

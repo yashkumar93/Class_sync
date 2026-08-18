@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Substitution History{% endblock %}
+{% block content %}
+<div class="cs-page-header">
+  <h1><i class="bi bi-arrow-left-right me-2" style="color:var(--cs-primary);"></i>Substitution History</h1>
+</div>
+<div class="cs-table-wrapper">
+  <table class="cs-table">
+    <thead>
+      <tr><th>Date</th><th>Absent Faculty</th><th>Substitute</th><th>Course</th><th>Tie-break?</th></tr>
+    </thead>
+    <tbody>
+    {% for r in records %}
+    <tr>
+      <td>{{ r.timestamp|date:"d M Y" }}</td>
+      <td>{{ r.absence_report.faculty.get_full_name }}</td>
+      <td class="fw-600">{{ r.substitute_faculty.get_full_name }}</td>
+      <td>{{ r.absence_report.timetable_slot.section.course.name }}</td>
+      <td>
+        {% if r.was_random_tiebreak %}
+          <span class="cs-badge neutral"><i class="bi bi-shuffle"></i> Random</span>
+        {% else %}
+          <span class="text-muted">—</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" class="text-muted text-center py-4">No substitutions recorded yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

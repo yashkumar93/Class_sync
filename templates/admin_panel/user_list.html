@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Users{% endblock %}
+{% block content %}
+<div class="cs-page-header d-flex align-items-center justify-content-between">
+  <div>
+    <h1><i class="bi bi-people me-2" style="color:var(--cs-primary);"></i>User Management</h1>
+    <div class="subtitle">{{ users.count }} user(s) found</div>
+  </div>
+  <a href="{% url 'admin_panel:user_create' %}" class="btn-cs-primary"><i class="bi bi-person-plus"></i> Add User</a>
+</div>
+
+<!-- Filters -->
+<form method="get" class="d-flex gap-2 mb-3 flex-wrap">
+  <select name="role" class="form-select" style="width:auto;">
+    <option value="">All roles</option>
+    <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>Admin</option>
+    <option value="faculty" {% if role_filter == 'faculty' %}selected{% endif %}>Faculty</option>
+    <option value="student" {% if role_filter == 'student' %}selected{% endif %}>Student</option>
+  </select>
+  <select name="dept" class="form-select" style="width:auto;">
+    <option value="">All departments</option>
+    {% for d in departments %}<option value="{{ d.pk }}" {% if dept_filter == d.pk|stringformat:'s' %}selected{% endif %}>{{ d.code }}</option>{% endfor %}
+  </select>
+  <input type="text" name="q" class="form-control" placeholder="Search name / email…" value="{{ search }}" style="max-width:240px;">
+  <button type="submit" class="btn-cs-primary">Filter</button>
+  <a href="{% url 'admin_panel:user_list' %}" class="btn-cs-secondary">Clear</a>
+</form>
+
+<div class="cs-table-wrapper">
+  <table class="cs-table">
+    <thead>
+      <tr>
+        <th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Dept</th><th>Status</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td class="fw-600">{{ u.get_full_name|default:"—" }}</td>
+        <td>{{ u.username }}</td>
+        <td>{{ u.email }}</td>
+        <td>
+          {% if u.role == 'admin' %}
+            <span class="cs-badge primary">Admin</span>
+          {% elif u.role == 'faculty' %}
+            <span class="cs-badge info">Faculty</span>
+          {% else %}
+            <span class="cs-badge neutral">Student</span>
+          {% endif %}
+        </td>
+        <td>{{ u.department.code|default:"—" }}</td>
+        <td>
+          {% if u.is_active %}
+            <span class="cs-badge success">Active</span>
+          {% else %}
+            <span class="cs-badge danger">Inactive</span>
+          {% endif %}
+        </td>
+        <td>
+          <div class="d-flex gap-2">
+            <a href="{% url 'admin_panel:user_edit' u.pk %}" class="btn-cs-secondary" style="font-size:0.8rem;padding:0.3rem 0.7rem;">
+              <i class="bi bi-pencil"></i>
+            </a>
+            <form method="post" action="{% url 'admin_panel:user_toggle_active' u.pk %}" style="margin:0;">
+              {% csrf_token %}
+              <button type="submit" class="{% if u.is_active %}btn-cs-danger{% else %}btn-cs-success{% endif %}" style="font-size:0.8rem;padding:0.3rem 0.7rem;"
+                      title="{% if u.is_active %}Deactivate{% else %}Activate{% endif %}">
+                <i class="bi {% if u.is_active %}bi-person-dash{% else %}bi-person-check{% endif %}"></i>
+              </button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="text-center text-muted py-4">No users found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

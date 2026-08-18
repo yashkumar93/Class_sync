@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Assignments{% endblock %}
+{% block content %}
+<div class="cs-page-header d-flex align-items-center justify-content-between">
+  <h1><i class="bi bi-file-earmark-text me-2" style="color:var(--cs-primary);"></i>My Assignments</h1>
+  <a href="{% url 'assignments:post_assignment' %}" class="btn-cs-primary"><i class="bi bi-file-earmark-plus"></i> Post New</a>
+</div>
+<div class="cs-table-wrapper">
+  <table class="cs-table">
+    <thead><tr><th>Title</th><th>Course / Section</th><th>Due Date</th><th>Submissions</th><th>Actions</th></tr></thead>
+    <tbody>
+    {% for a in assignments %}
+    <tr>
+      <td class="fw-600">{{ a.title }}</td>
+      <td>{{ a.section.course.code }} — {{ a.section.name }}</td>
+      <td>
+        <span {% if a.is_past_due %}class="text-danger fw-600"{% endif %}>
+          {{ a.due_date|date:"d M Y, H:i" }}
+        </span>
+      </td>
+      <td>
+        <span class="cs-badge info">{{ a.submissions.count }} / {{ a.section.students.count }}</span>
+      </td>
+      <td>
+        <a href="{% url 'assignments:submission_dashboard' a.pk %}" class="btn-cs-secondary" style="font-size:0.8rem;padding:0.3rem 0.7rem;">
+          <i class="bi bi-eye"></i> View
+        </a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" class="text-muted text-center py-4">No assignments posted yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

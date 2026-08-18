@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}My Absences{% endblock %}
+{% block content %}
+<div class="cs-page-header d-flex align-items-center justify-content-between">
+  <h1><i class="bi bi-clock-history me-2" style="color:var(--cs-primary);"></i>My Absences</h1>
+  <a href="{% url 'absence:report_absence' %}" class="btn-cs-primary"><i class="bi bi-plus-circle"></i> Report New</a>
+</div>
+<div class="cs-table-wrapper">
+  <table class="cs-table">
+    <thead>
+      <tr><th>Date</th><th>Class</th><th>Period</th><th>Status</th><th>Substitute</th><th>Makeup?</th></tr>
+    </thead>
+    <tbody>
+    {% for a in absences %}
+    <tr>
+      <td>{{ a.date }}</td>
+      <td>{{ a.timetable_slot.section.course.name }}</td>
+      <td>P{{ a.timetable_slot.period_number }} {{ a.timetable_slot.start_time|time:"H:i" }}</td>
+      <td>
+        {% if a.status == 'reassigned' %}<span class="cs-badge success"><i class="bi bi-check-circle"></i> Reassigned</span>
+        {% elif a.status == 'self_study' %}<span class="cs-badge warning"><i class="bi bi-book"></i> Self-Study</span>
+        {% elif a.status == 'pending_confirmation' %}<span class="cs-badge info"><i class="bi bi-hourglass"></i> Pending</span>
+        {% else %}<span class="cs-badge neutral">{{ a.get_status_display }}</span>{% endif %}
+      </td>
+      <td>{{ a.proposed_substitute.get_full_name|default:"—" }}</td>
+      <td>
+        {% if a.is_makeup_candidate %}<span class="cs-badge danger"><i class="bi bi-flag"></i> Yes</span>
+        {% else %}<span class="text-muted">—</span>{% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6" class="text-muted text-center py-4">No absences reported yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

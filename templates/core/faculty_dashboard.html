@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}Faculty Dashboard{% endblock %}
+{% block content %}
+<div class="cs-page-header">
+  <h1><i class="bi bi-grid-1x2 me-2" style="color:var(--cs-primary);"></i>Welcome, {{ user.first_name }}</h1>
+  <div class="subtitle">{{ user.department.name|default:"Faculty Portal" }}</div>
+</div>
+
+<!-- Pending confirmations banner -->
+{% for report in pending_confirmations %}
+<div class="cs-alert warning" style="margin-bottom:0.75rem;">
+  <i class="bi bi-hourglass-split"></i>
+  <div>
+    <strong>Substitution Request:</strong> You have been proposed to cover
+    <strong>{{ report.timetable_slot.section.course.name }}</strong> (Section {{ report.timetable_slot.section.name }})
+    on <strong>{{ report.date }}</strong> at {{ report.timetable_slot.start_time|time:"H:i" }}.
+    <em>{{ report.faculty.get_full_name }}</em> is absent.
+    &mdash;
+    <form method="post" action="{% url 'absence:confirm_substitute' report.pk %}" style="display:inline;">
+      {% csrf_token %}
+      <button class="btn-cs-success" style="font-size:0.8rem; padding:0.3rem 0.75rem; margin-left:0.5rem;">
+        <i class="bi bi-check-lg"></i> Accept
+      </button>
+    </form>
+    <form method="post" action="{% url 'absence:decline_substitute' report.pk %}" style="display:inline;">
+      {% csrf_token %}
+      <button class="btn-cs-danger" style="font-size:0.8rem; padding:0.3rem 0.75rem; margin-left:0.25rem;">
+        <i class="bi bi-x-lg"></i> Decline
+      </button>
+    </form>
+    <br><small class="text-muted">Deadline: {{ report.confirmation_deadline|date:"H:i, d M" }}</small>
+  </div>
+</div>
+{% endfor %}
+
+<div class="row g-3">
+  <!-- Today's classes -->
+  <div class="col-lg-6">
+    <div class="cs-card">
+      <div class="cs-card-header">
+        <h5><i class="bi bi-calendar-day me-2"></i>Today's Classes</h5>
+      </div>
+      <div class="cs-card-body" style="padding:0;">
+        {% if today_slots %}
+          <div class="cs-table-wrapper" style="border:none;box-shadow:none;border-radius:0;">
+            <table class="cs-table">
+              <thead><tr><th>Period</th><th>Course / Section</th><th>Time</th><th>OTP</th></tr></thead>
+              <tbody>
+              {% for slot in today_slots %}
+              <tr>
+                <td>P{{ slot.timetable_slots__period_number }}</td>
+                <td>{{ slot.course__name }} — Sec {{ slot.name }}</td>
+                <td>{{ slot.timetable_slots__start_time|time:"H:i" }}</td>
+                <td>
+                  <a href="{% url 'attendance:generate_otp' slot_id=slot.timetable_slots__id date_str=today|date:'Y-m-d' %}" class="btn-cs-primary" style="font-size:0.78rem;padding:0.3rem 0.7rem;">
+                    <i class="bi bi-123"></i> Generate OTP
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="text-center text-muted py-4"><i class="bi bi-calendar-check" style="font-size:2rem;"></i><br>No classes scheduled today.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- My Sections -->
+  <div class="col-lg-6">
+    <div class="cs-card">
+      <div class="cs-card-header">
+        <h5><i class="bi bi-diagram-3 me-2"></i>My Sections</h5>
+      </div>
+      <div class="cs-card-body" style="padding:0;">
+        <div class="cs-table-wrapper" style="border:none;box-shadow:none;border-radius:0;">
+          <table class="cs-table">
+            <thead><tr><th>Course</th><th>Section</th><th>Students</th><th>Attendance</th></tr></thead>
+            <tbody>
+            {% for section in sections %}
+            <tr>
+              <td>{{ section.course.code }}</td>
+              <td>{{ section.name }}</td>
+              <td>{{ section.students.count }}</td>
+              <td>
+                <a href="{% url 'attendance:section_dashboard' section.pk %}" class="btn-cs-secondary" style="font-size:0.78rem;padding:0.3rem 0.7rem;">
+                  <i class="bi bi-bar-chart"></i> View
+                </a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-muted text-center py-3">No sections assigned.</td></tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="col-12">
+    <div class="cs-card">
+      <div class="cs-card-header"><h5>Quick Actions</h5></div>
+      <div class="cs-card-body d-flex gap-3 flex-wrap">
+        <a href="{% url 'absence:report_absence' %}" class="btn-cs-primary"><i class="bi bi-calendar-x"></i> Report Absence</a>
+        <a href="{% url 'assignments:post_assignment' %}" class="btn-cs-primary"><i class="bi bi-file-earmark-plus"></i> Post Assignment</a>
+        <a href="{% url 'absence:opt_in_status' %}" class="btn-cs-secondary"><i class="bi bi-toggle-on"></i> Sub. Opt-in</a>
+        <a href="{% url 'notifications:risk_flags' %}" class="btn-cs-secondary"><i class="bi bi-flag"></i> Risk Flags</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Absences -->
+  <div class="col-12">
+    <div class="cs-card">
+      <div class="cs-card-header">
+        <h5><i class="bi bi-clock-history me-2"></i>Recent Absences</h5>
+        <a href="{% url 'absence:my_absences' %}" class="btn-cs-secondary" style="font-size:0.8rem;">View All</a>
+      </div>
+      <div class="cs-table-wrapper" style="border:none;box-shadow:none;border-radius:0;">
+        <table class="cs-table">
+          <thead><tr><th>Date</th><th>Class</th><th>Status</th><th>Substitute</th></tr></thead>
+          <tbody>
+          {% for a in recent_absences %}
+          <tr>
+            <td>{{ a.date }}</td>
+            <td>{{ a.timetable_slot.section.course.name }}</td>
+            <td>
+              {% if a.status == 'reassigned' %}
+                <span class="cs-badge success"><i class="bi bi-check-circle"></i> Reassigned</span>
+              {% elif a.status == 'self_study' %}
+                <span class="cs-badge warning"><i class="bi bi-book"></i> Self-Study</span>
+              {% elif a.status == 'pending_confirmation' %}
+                <span class="cs-badge info"><i class="bi bi-hourglass"></i> Pending</span>
+              {% else %}
+                <span class="cs-badge neutral">{{ a.get_status_display }}</span>
+              {% endif %}
+            </td>
+            <td>{{ a.proposed_substitute.get_full_name|default:"—" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="text-muted text-center py-3">No absences reported yet.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

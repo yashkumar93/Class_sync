@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Mark Attendance{% endblock %}
+{% block content %}
+<div class="cs-page-header">
+  <h1><i class="bi bi-check2-circle me-2" style="color:var(--cs-primary);"></i>Mark Attendance</h1>
+  <div class="subtitle">Enter the OTP code displayed on your lecturer's screen</div>
+</div>
+
+{% if active_sessions %}
+<div class="row g-3">
+  {% for item in active_sessions %}
+  <div class="col-md-6 col-xl-4">
+    <div class="cs-card" style="{% if item.already_marked %}opacity:0.6;{% endif %}">
+      <div class="cs-card-header">
+        <h6>{{ item.section.course.name }}</h6>
+        <span class="cs-badge neutral fs-sm">Sec {{ item.section.name }}</span>
+      </div>
+      <div class="cs-card-body">
+        <div class="text-muted fs-sm" style="margin-bottom:0.6rem;">
+          <i class="bi bi-clock me-1"></i>
+          {{ item.slot.start_time|time:"H:i" }} – {{ item.slot.end_time|time:"H:i" }}
+          (Period {{ item.slot.period_number }})
+          {% if item.section.room %}
+            &nbsp;&middot;&nbsp; <i class="bi bi-geo-alt me-1"></i>{{ item.section.room }}
+          {% endif %}
+        </div>
+
+        {% if item.already_marked %}
+          <!-- Already marked -->
+          <div class="cs-alert success" style="margin-bottom:0; font-size:0.85rem;">
+            <i class="bi bi-check-circle"></i>
+            Attendance already recorded
+          </div>
+
+        {% elif item.session and item.is_active %}
+          <!-- Active session — show OTP form -->
+          <form method="post" class="otp-inline-form">
+            {% csrf_token %}
+            <input type="hidden" name="slot_id" value="{{ item.slot.pk }}">
+            <div class="d-flex gap-2 align-items-end">
+              <div style="flex:1;">
+                <input type="text"
+                       name="otp_code"
+                       class="form-control"
+                       placeholder="000000"
+                       maxlength="6"
+                       inputmode="numeric"
+                       pattern="[0-9]{6}"
+                       autocomplete="off"
+                       required
+                       style="font-size:1.6rem; text-align:center; letter-spacing:0.3em; font-weight:700; padding:0.5rem;">
+              </div>
+              <button type="submit" class="btn-cs-primary" style="padding:0.55rem 1rem; white-space:nowrap;">
+                <i class="bi bi-check-lg"></i> Mark
+              </button>
+            </div>
+          </form>
+
+        {% elif item.session and not item.is_active %}
+          <!-- Expired session -->
+          <div class="cs-alert warning" style="margin-bottom:0; font-size:0.85rem;">
+            <i class="bi bi-clock-history"></i>
+            OTP has expired. Ask your lecturer to generate a new one.
+          </div>
+
+        {% else %}
+          <!-- No session generated yet -->
+          <div class="text-muted fs-sm" style="padding:0.5rem 0;">
+            <i class="bi bi-hourglass-split me-1"></i>
+            No OTP session yet — waiting for lecturer to generate.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="cs-card">
+  <div class="cs-card-body text-center text-muted" style="padding:3rem 1rem;">
+    <i class="bi bi-calendar-check" style="font-size:2.5rem; color:var(--cs-gray-400);"></i>
+    <p class="mt-2" style="margin-bottom:0;">No classes scheduled for today ({{ today|date:"l, d M Y" }}).</p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

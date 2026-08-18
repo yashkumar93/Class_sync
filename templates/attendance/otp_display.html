@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}OTP — {{ slot.section.course.name }}{% endblock %}
+{% block extra_css %}
+<style>
+  /* Projector-optimised: hide nav, sidebar, go full-screen */
+  .cs-navbar, .cs-sidebar { display: none !important; }
+  .cs-main { margin: 0 !important; padding: 0 !important; }
+  body { overflow: hidden; background: var(--cs-primary); }
+
+  /* Countdown ring */
+  .otp-countdown-ring {
+    position: relative;
+    width: 140px;
+    height: 140px;
+  }
+  .otp-countdown-ring svg {
+    transform: rotate(-90deg);
+    width: 140px;
+    height: 140px;
+  }
+  .otp-countdown-ring .ring-bg {
+    fill: none;
+    stroke: rgba(255,255,255,0.15);
+    stroke-width: 6;
+  }
+  .otp-countdown-ring .ring-fg {
+    fill: none;
+    stroke: #fff;
+    stroke-width: 6;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
+  }
+  .otp-countdown-ring .ring-fg.warning { stroke: var(--cs-accent); }
+  .otp-countdown-ring .ring-fg.danger  { stroke: var(--cs-danger); }
+  .otp-countdown-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Expired overlay */
+  .otp-expired-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 1.5rem;
+    z-index: 9999;
+  }
+  .otp-expired-overlay.show { display: flex; }
+  .otp-expired-overlay .expired-text {
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--cs-danger);
+    letter-spacing: 0.05em;
+  }
+
+  /* Pulse animation for the OTP code */
+  @keyframes otpPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+  }
+  .cs-otp-code.active {
+    animation: otpPulse 3s ease-in-out infinite;
+  }
+
+  .otp-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    opacity: 0.8;
+    font-size: 1rem;
+  }
+  .otp-meta-row i { margin-right: 0.3rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cs-otp-display">
+  <div class="cs-otp-label" style="font-size:1.8rem; font-weight:600;">
+    {{ slot.section.course.name }} &mdash; Section {{ slot.section.name }}
+  </div>
+
+  <div class="cs-otp-code active" id="otpCode">{{ session.otp_code }}</div>
+
+  <div class="cs-otp-label" style="opacity:0.65; font-size:1.1rem;">
+    Enter this code in the Class Sync app to mark your attendance
+  </div>
+
+  <!-- Countdown ring -->
+  <div class="otp-countdown-ring" id="countdownRing">
+    <svg viewBox="0 0 140 140">
+      <circle class="ring-bg" cx="70" cy="70" r="60"/>
+      <circle class="ring-fg" id="ringFg" cx="70" cy="70" r="60"
+              stroke-dasharray="376.99"
+              stroke-dashoffset="0"/>
+    </svg>
+    <div class="otp-countdown-text" id="countdownText">{{ remaining_seconds }}s</div>
+  </div>
+
+  <div class="otp-meta-row">
+    <span><i class="bi bi-clock"></i> Valid until {{ session.expires_at|time:"H:i:s" }}</span>
+    <span><i class="bi bi-person-badge"></i> {{ session.generated_by.get_full_name }}</span>
+    {% if slot.section.room %}
+    <span><i class="bi bi-geo-alt"></i> {{ slot.section.room }}</span>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Expired overlay -->
+<div class="otp-expired-overlay" id="expiredOverlay">
+  <div class="expired-text"><i class="bi bi-x-circle"></i> Code Expired</div>
+  <a href="{% url 'attendance:generate_otp' slot_id=slot.pk date_str=session.date|date:'Y-m-d' %}"
+     class="btn-cs-primary" style="font-size:1.2rem; padding:0.8rem 2rem;">
+    <i class="bi bi-arrow-clockwise"></i> Generate New Code
+  </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function() {
+    const totalSeconds = {{ validity_seconds }};
+    let remaining = {{ remaining_seconds }};
+    const circumference = 2 * Math.PI * 60; // r=60
+
+    const ringFg    = document.getElementById('ringFg');
+    const textEl    = document.getElementById('countdownText');
+    const codeEl    = document.getElementById('otpCode');
+    const overlay   = document.getElementById('expiredOverlay');
+
+    function update() {
+      // Update text
+      textEl.textContent = remaining > 0 ? remaining + 's' : '0s';
+
+      // Update ring
+      const progress = remaining / totalSeconds;
+      ringFg.style.strokeDashoffset = circumference * (1 - progress);
+
+      // Colour transitions
+      ringFg.classList.remove('warning', 'danger');
+      if (remaining <= 10) {
+        ringFg.classList.add('danger');
+      } else if (remaining <= 30) {
+        ringFg.classList.add('warning');
+      }
+
+      if (remaining <= 0) {
+        clearInterval(timer);
+        codeEl.style.opacity = '0.2';
+        codeEl.classList.remove('active');
+        overlay.classList.add('show');
+      }
+
+      remaining--;
+    }
+
+    // Initial render
+    ringFg.style.strokeDasharray = circumference;
+    update();
+    const timer = setInterval(update, 1000);
+  })();
+</script>
+{% endblock %}

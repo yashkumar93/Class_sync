@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Notification Centre{% endblock %}
+{% block content %}
+<div class="cs-page-header d-flex align-items-center justify-content-between">
+  <div>
+    <h1><i class="bi bi-bell me-2" style="color:var(--cs-primary);"></i>Notifications</h1>
+    <div class="subtitle">{{ unread_count }} unread</div>
+  </div>
+  <a href="{% url 'notifications:mark_all_read' %}" class="btn-cs-secondary">
+    <i class="bi bi-check-all"></i> Mark All Read
+  </a>
+</div>
+
+<div class="cs-card">
+  {% for n in notifications %}
+    <div class="cs-notification-item {% if not n.is_read %}unread{% endif %}">
+      {% if not n.is_read %}<div class="cs-notification-dot"></div>{% endif %}
+      <div style="flex:1;">
+        <div class="cs-notification-msg">{{ n.message }}</div>
+        <div class="d-flex gap-3 align-items-center" style="margin-top:0.3rem;">
+          <span class="cs-notification-time"><i class="bi bi-clock"></i> {{ n.sent_at|timesince }} ago</span>
+          <span class="cs-badge neutral" style="font-size:0.7rem;">{{ n.get_notif_type_display }}</span>
+          {% if not n.is_read %}
+            <a href="{% url 'notifications:mark_read' n.pk %}" style="font-size:0.75rem; color:var(--cs-primary);">Mark read</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <div class="text-center text-muted py-5">
+      <i class="bi bi-bell-slash" style="font-size:2.5rem; color:var(--cs-gray-300);"></i>
+      <p class="mt-2">No notifications yet.</p>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Student Dashboard{% endblock %}
+{% block content %}
+<div class="cs-page-header">
+  <h1><i class="bi bi-grid-1x2 me-2" style="color:var(--cs-primary);"></i>Welcome, {{ user.first_name }}</h1>
+  <div class="subtitle">{{ user.roll_number|default:user.username }} &mdash; {{ user.department.name|default:"Student Portal" }}</div>
+</div>
+
+<div class="row g-3">
+  <!-- Mark Attendance CTA -->
+  <div class="col-12">
+    <div class="cs-card" style="background: linear-gradient(135deg, var(--cs-primary) 0%, var(--cs-primary-dark) 100%); color:white; border:none;">
+      <div class="cs-card-body d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+          <div style="font-size:1.1rem; font-weight:700;">Mark Your Attendance</div>
+          <div style="opacity:0.85; font-size:0.875rem;">Enter the OTP displayed by your lecturer to mark yourself present.</div>
+        </div>
+        <a href="{% url 'attendance:submit_otp' %}" class="btn-cs-primary"
+           style="background:white; color:var(--cs-primary); font-weight:600; padding:0.6rem 1.4rem;">
+          <i class="bi bi-check2-circle"></i> Enter OTP
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Attendance Summary -->
+  <div class="col-lg-7">
+    <div class="cs-card">
+      <div class="cs-card-header">
+        <h5><i class="bi bi-bar-chart me-2"></i>Attendance Summary</h5>
+        <a href="{% url 'attendance:my_attendance' %}" class="btn-cs-secondary" style="font-size:0.8rem;">Details</a>
+      </div>
+      <div class="cs-card-body">
+        {% for row in attendance_summary %}
+        <div style="margin-bottom:1rem;">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="fw-600 fs-sm">{{ row.section.course.name }} &mdash; Sec {{ row.section.name }}</span>
+            <span class="fw-700 {% if row.below_threshold %}text-danger{% else %}text-success{% endif %}">
+              {{ row.percentage }}%
+            </span>
+          </div>
+          <div class="cs-progress-bar">
+            <div class="cs-progress-fill {% if row.percentage >= 75 %}good{% elif row.percentage >= 60 %}warning{% else %}danger{% endif %}"
+                 style="width:{{ row.percentage }}%;"></div>
+          </div>
+          <div class="d-flex justify-content-between" style="font-size:0.75rem; color:var(--cs-gray-400); margin-top:0.2rem;">
+            <span>{{ row.attended }} / {{ row.total_sessions }} classes</span>
+            {% if row.below_threshold %}<span class="text-danger"><i class="bi bi-exclamation-triangle"></i> Below threshold</span>{% endif %}
+          </div>
+        </div>
+        {% empty %}
+        <div class="text-muted text-center py-3">No attendance data yet.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Upcoming Assignments -->
+  <div class="col-lg-5">
+    <div class="cs-card">
+      <div class="cs-card-header">
+        <h5><i class="bi bi-file-earmark-text me-2"></i>Upcoming Assignments</h5>
+        <a href="{% url 'assignments:student_list' %}" class="btn-cs-secondary" style="font-size:0.8rem;">All</a>
+      </div>
+      <div class="cs-card-body" style="padding:0.5rem;">
+        {% for a in upcoming_assignments %}
+        <div style="padding:0.75rem; border-bottom:1px solid var(--cs-gray-100);">
+          <div class="fw-600 fs-sm">{{ a.title }}</div>
+          <div class="fs-sm text-muted">{{ a.section.course.name }}</div>
+          <div style="font-size:0.75rem; margin-top:0.3rem;">
+            <i class="bi bi-calendar-event text-warning"></i>
+            Due: <strong>{{ a.due_date|date:"d M, H:i" }}</strong>
+          </div>
+          <a href="{% url 'assignments:submit_assignment' a.pk %}" class="btn-cs-primary" style="font-size:0.78rem;padding:0.3rem 0.7rem;margin-top:0.4rem;">
+            <i class="bi bi-upload"></i> Submit
+          </a>
+        </div>
+        {% empty %}
+        <div class="text-muted text-center py-4">
+          <i class="bi bi-check-all" style="font-size:1.75rem;"></i><br>All caught up! 🎉
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

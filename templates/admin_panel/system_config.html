@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}System Configuration{% endblock %}
+{% block content %}
+<div class="cs-page-header">
+  <h1><i class="bi bi-gear me-2" style="color:var(--cs-primary);"></i>System Configuration</h1>
+  <div class="subtitle">Platform-wide thresholds and operational settings.</div>
+</div>
+<div class="cs-alert info"><i class="bi bi-info-circle"></i> These settings affect the reassignment engine, OTP validity, attendance thresholds, and early-warning flags for the entire institution.</div>
+<div class="cs-form-wrapper">{% crispy form %}</div>
+{% endblock %}

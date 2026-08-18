@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="cs-page-header d-flex align-items-center justify-content-between">
+  <div>
+    <h1><i class="bi bi-grid-1x2 me-2" style="color:var(--cs-primary);"></i>System Dashboard</h1>
+    <div class="subtitle">Institution-wide overview &mdash; Class Sync</div>
+  </div>
+  <a href="{% url 'admin_panel:send_announcement' %}" class="btn-cs-primary">
+    <i class="bi bi-megaphone"></i> Broadcast Announcement
+  </a>
+</div>
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <div class="cs-stat-card">
+      <div class="cs-stat-icon primary"><i class="bi bi-people" style="font-size:1.4rem;"></i></div>
+      <div>
+        <div class="cs-stat-value">{{ total_faculty }}</div>
+        <div class="cs-stat-label">Active Faculty</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="cs-stat-card">
+      <div class="cs-stat-icon success"><i class="bi bi-mortarboard" style="font-size:1.4rem;"></i></div>
+      <div>
+        <div class="cs-stat-value">{{ total_students }}</div>
+        <div class="cs-stat-label">Enrolled Students</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="cs-stat-card">
+      <div class="cs-stat-icon warning"><i class="bi bi-calendar-x" style="font-size:1.4rem;"></i></div>
+      <div>
+        <div class="cs-stat-value">{{ self_study_count }}</div>
+        <div class="cs-stat-label">Self-Study (30d)</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="cs-stat-card">
+      <div class="cs-stat-icon danger"><i class="bi bi-flag" style="font-size:1.4rem;"></i></div>
+      <div>
+        <div class="cs-stat-value">{{ active_risk_flags }}</div>
+        <div class="cs-stat-label">Active Risk Flags</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- Recent Absences -->
+  <div class="col-lg-7">
+    <div class="cs-card">
+      <div class="cs-card-header">
+        <h5><i class="bi bi-calendar-x me-2"></i>Recent Absences</h5>
+        <a href="{% url 'admin_panel:absence_override_list' %}" class="btn-cs-secondary" style="font-size:0.8rem;">View All</a>
+      </div>
+      <div class="cs-table-wrapper" style="border:none; box-shadow:none; border-radius:0;">
+        <table class="cs-table">
+          <thead>
+            <tr>
+              <th>Faculty</th>
+              <th>Course</th>
+              <th>Date</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in recent_absences %}
+            <tr>
+              <td class="fw-600">{{ r.faculty.get_full_name }}</td>
+              <td>{{ r.timetable_slot.section.course.name }}</td>
+              <td>{{ r.date }}</td>
+              <td>
+                {% if r.status == 'reassigned' %}
+                  <span class="cs-badge success"><i class="bi bi-check-circle"></i> Reassigned</span>
+                {% elif r.status == 'self_study' %}
+                  <span class="cs-badge warning"><i class="bi bi-book"></i> Self-Study</span>
+                {% elif r.status == 'pending_confirmation' %}
+                  <span class="cs-badge info"><i class="bi bi-hourglass"></i> Pending</span>
+                {% else %}
+                  <span class="cs-badge neutral">{{ r.get_status_display }}</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-muted text-center py-3">No absences reported yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Risk Flags -->
+  <div class="col-lg-5">
+    <div class="cs-card">
+      <div class="cs-card-header">
+        <h5><i class="bi bi-flag me-2" style="color:var(--cs-danger);"></i>Active Risk Flags</h5>
+        <a href="{% url 'notifications:risk_flags' %}" class="btn-cs-secondary" style="font-size:0.8rem;">View All</a>
+      </div>
+      <div class="cs-card-body" style="padding:0.75rem;">
+        {% for flag in risk_flags %}
+          <div class="cs-risk-flag">
+            <div class="fw-600 fs-sm">{{ flag.student.get_full_name }}</div>
+            <div class="fs-sm text-muted" style="margin-top:0.25rem;">{{ flag.reason|truncatechars:100 }}</div>
+            <div style="font-size:0.7rem; color:var(--cs-gray-400); margin-top:0.3rem;">{{ flag.flagged_at|date:"d M Y" }}</div>
+          </div>
+        {% empty %}
+          <div class="text-muted text-center py-3 fs-sm">No active risk flags. 🎉</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Substitution Fairness -->
+  <div class="col-12">
+    <div class="cs-card">
+      <div class="cs-card-header">
+        <h5><i class="bi bi-arrow-left-right me-2"></i>Substitution Load (Last 30 Days)</h5>
+      </div>
+      <div class="cs-table-wrapper" style="border:none; box-shadow:none; border-radius:0;">
+        <table class="cs-table">
+          <thead>
+            <tr>
+              <th>Faculty</th>
+              <th>Department</th>
+              <th>Substitutions</th>
+              <th>Load Bar</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for f in substitution_counts %}
+            <tr>
+              <td class="fw-600">{{ f.get_full_name }}</td>
+              <td>{{ f.department.code|default:"—" }}</td>
+              <td>{{ f.sub_count }}</td>
+              <td style="width:180px;">
+                {% with max_sub=substitution_counts.0.sub_count %}
+                  {% if max_sub > 0 %}
+                    <div class="cs-progress-bar">
+                      <div class="cs-progress-fill {% if f.sub_count <= 2 %}good{% elif f.sub_count <= 5 %}warning{% else %}danger{% endif %}"
+                           style="width:{{ f.sub_count|floatformat:0 }}%;">
+                      </div>
+                    </div>
+                  {% else %}
+                    <span class="text-muted fs-sm">—</span>
+                  {% endif %}
+                {% endwith %}
+              </td>
+            </tr>
+            {% empty %}
+              <tr><td colspan="4" class="text-muted text-center py-3">No substitution data.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

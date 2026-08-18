@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Report Absence{% endblock %}
+{% block content %}
+<div class="cs-page-header">
+  <h1><i class="bi bi-calendar-x me-2" style="color:var(--cs-warning);"></i>Report Absence</h1>
+  <div class="subtitle">The system will automatically find and propose an eligible substitute.</div>
+</div>
+
+<div class="cs-alert info">
+  <i class="bi bi-info-circle"></i>
+  <div>
+    On submission, the system will immediately look for an opted-in faculty member to cover your class.
+    They will have <strong>{{ confirmation_window }} minutes</strong> to confirm before the next candidate is tried.
+    If nobody is available, the period will be marked as <strong>Self-Study</strong>.
+  </div>
+</div>
+
+<div class="cs-form-wrapper">
+  {% crispy form %}
+</div>
+{% endblock %}

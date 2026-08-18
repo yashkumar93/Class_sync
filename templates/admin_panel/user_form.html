@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="cs-page-header d-flex align-items-center justify-content-between">
+  <h1>{{ title }}</h1>
+  <a href="{% url 'admin_panel:user_list' %}" class="btn-cs-secondary"><i class="bi bi-arrow-left"></i> Back</a>
+</div>
+<div class="cs-form-wrapper">
+  {% crispy form %}
+</div>
+{% endblock %}

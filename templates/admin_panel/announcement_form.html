@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Broadcast Announcement{% endblock %}
+{% block content %}
+<div class="cs-page-header">
+  <h1><i class="bi bi-megaphone me-2" style="color:var(--cs-primary);"></i>Broadcast Announcement</h1>
+  <div class="subtitle">Send an in-app notification to all users, faculty, or students.</div>
+</div>
+<div class="cs-form-wrapper">{% crispy form %}</div>
+{% endblock %}

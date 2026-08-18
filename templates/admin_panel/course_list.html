@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Courses{% endblock %}
+{% block content %}
+<div class="cs-page-header d-flex align-items-center justify-content-between">
+  <h1><i class="bi bi-book me-2" style="color:var(--cs-primary);"></i>Courses</h1>
+  <a href="{% url 'admin_panel:course_create' %}" class="btn-cs-primary"><i class="bi bi-plus"></i> Add</a>
+</div>
+<div class="cs-table-wrapper">
+  <table class="cs-table">
+    <thead><tr><th>Code</th><th>Name</th><th>Department</th><th>Credits</th><th>Sections</th><th>Actions</th></tr></thead>
+    <tbody>
+    {% for c in courses %}
+    <tr>
+      <td class="fw-600">{{ c.code }}</td>
+      <td>{{ c.name }}</td>
+      <td>{{ c.department.code }}</td>
+      <td>{{ c.credits }}</td>
+      <td><span class="cs-badge info">{{ c.section_count }}</span></td>
+      <td><a href="{% url 'admin_panel:course_edit' c.pk %}" class="btn-cs-secondary" style="font-size:0.78rem;padding:0.3rem 0.7rem;"><i class="bi bi-pencil"></i></a></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6" class="text-muted text-center py-4">No courses yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

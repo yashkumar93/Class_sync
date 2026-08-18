@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}{% if existing %}Resubmit{% else %}Submit{% endif %} — {{ assignment.title }}{% endblock %}
+{% block content %}
+<div class="cs-page-header">
+  <h1>
+    <i class="bi bi-upload me-2" style="color:var(--cs-primary);"></i>
+    {% if existing %}Resubmit Assignment{% else %}Submit Assignment{% endif %}
+  </h1>
+  <div class="subtitle">{{ assignment.section.course.name }} — {{ assignment.title }}</div>
+</div>
+
+{% if assignment.is_past_due and not existing %}
+<div class="cs-alert warning"><i class="bi bi-exclamation-triangle"></i> This assignment is past due. Your submission will be marked as <strong>Late</strong>.</div>
+{% endif %}
+
+{% if existing %}
+<div class="cs-alert info">
+  <i class="bi bi-info-circle"></i>
+  <div>
+    You already submitted on <strong>{{ existing.submitted_at|date:"d M Y, H:i" }}</strong>.
+    Uploading a new file will <strong>replace</strong> your previous submission.
+  </div>
+</div>
+{% endif %}
+
+<div class="cs-form-wrapper">
+  <div class="mb-3 p-3 rounded" style="background:var(--cs-gray-50); border:1px solid var(--cs-border);">
+    <div class="fw-600">{{ assignment.title }}</div>
+    {% if assignment.description %}
+    <div class="fs-sm text-muted mt-1">{{ assignment.description }}</div>
+    {% endif %}
+    <div class="fs-sm mt-2">
+      <i class="bi bi-calendar-event text-warning"></i> Due: {{ assignment.due_date|date:"d M Y, H:i" }}
+    </div>
+    {% if assignment.attachment %}
+    <div class="fs-sm mt-1">
+      <a href="{{ assignment.attachment.url }}" target="_blank" class="text-primary">
+        <i class="bi bi-paperclip"></i> View Attachment
+      </a>
+    </div>
+    {% endif %}
+  </div>
+  {% crispy form %}
+</div>
+{% endblock %}

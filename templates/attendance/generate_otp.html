@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Generate OTP — {{ slot.section.course.name }}{% endblock %}
+{% block content %}
+<div class="cs-page-header">
+  <h1><i class="bi bi-qr-code me-2" style="color:var(--cs-primary);"></i>Generate Attendance Code</h1>
+  <div class="subtitle">Create an OTP for students to mark their attendance</div>
+</div>
+
+<div class="cs-form-wrapper" style="max-width:520px;">
+  <div style="margin-bottom:1.5rem;">
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <span class="cs-badge primary"><i class="bi bi-book"></i> {{ slot.section.course.code }}</span>
+      <span class="cs-badge neutral">Section {{ slot.section.name }}</span>
+    </div>
+    <h5 style="margin:0; font-weight:600;">{{ slot.section.course.name }}</h5>
+    <div class="text-muted fs-sm" style="margin-top:0.4rem;">
+      <i class="bi bi-calendar3 me-1"></i> {{ target_date|date:"l, d M Y" }}
+      &nbsp;&middot;&nbsp;
+      <i class="bi bi-clock me-1"></i> {{ slot.start_time|time:"H:i" }} – {{ slot.end_time|time:"H:i" }}
+      (Period {{ slot.period_number }})
+      {% if slot.section.room %}
+      &nbsp;&middot;&nbsp;
+      <i class="bi bi-geo-alt me-1"></i> {{ slot.section.room }}
+      {% endif %}
+    </div>
+  </div>
+
+  {% if existing_session %}
+  <div class="cs-alert warning" style="margin-bottom:1.25rem;">
+    <i class="bi bi-exclamation-triangle"></i>
+    <div>
+      An OTP session already exists for this class today
+      (code: <strong>{{ existing_session.otp_code }}</strong>,
+      {% if existing_session.is_active %}
+        active until {{ existing_session.expires_at|time:"H:i:s" }}).
+      {% else %}
+        expired).
+      {% endif %}
+      Generating a new code will <strong>replace</strong> it.
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="cs-alert info" style="margin-bottom:1.5rem;">
+    <i class="bi bi-info-circle"></i>
+    <div>
+      The OTP will be valid for <strong>{{ validity_seconds }} seconds</strong>.
+      Display it on the projector so students can see and enter it.
+    </div>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn-cs-primary" style="width:100%; justify-content:center; padding:0.7rem; font-size:1rem;">
+      <i class="bi bi-shield-lock"></i>
+      {% if existing_session %}Regenerate OTP{% else %}Generate OTP{% endif %}
+    </button>
+  </form>
+
+  <div class="text-center" style="margin-top:1rem;">
+    <a href="{% url 'core:faculty_dashboard' %}" class="text-muted fs-sm">
+      <i class="bi bi-arrow-left"></i> Back to Dashboard
+    </a>
+  </div>
+</div>
+{% endblock %}

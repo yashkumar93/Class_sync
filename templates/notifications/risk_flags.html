@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Risk Flags{% endblock %}
+{% block content %}
+<div class="cs-page-header">
+  <h1><i class="bi bi-flag me-2" style="color:var(--cs-danger);"></i>Early-Warning Risk Flags</h1>
+  <div class="subtitle">Students flagged for low attendance and/or missed submissions.</div>
+</div>
+
+{% if flags %}
+  {% for flag in flags %}
+  <div class="cs-risk-flag d-flex justify-content-between align-items-start gap-3 mb-3" style="padding:1rem 1.25rem;">
+    <div style="flex:1;">
+      <div class="fw-700">{{ flag.student.get_full_name }}</div>
+      <div class="fs-sm text-muted">{{ flag.student.roll_number|default:flag.student.username }} &mdash; {{ flag.student.department.name|default:"" }}</div>
+      <div class="fs-sm" style="margin-top:0.4rem; color:var(--cs-gray-800);">{{ flag.reason }}</div>
+      <div style="font-size:0.75rem; color:var(--cs-gray-400); margin-top:0.3rem;">
+        Flagged: {{ flag.flagged_at|date:"d M Y, H:i" }}
+      </div>
+    </div>
+    <form method="post" action="{% url 'notifications:resolve_flag' flag.pk %}">
+      {% csrf_token %}
+      <button class="btn-cs-success" style="font-size:0.8rem; padding:0.35rem 0.85rem; white-space:nowrap;">
+        <i class="bi bi-check-circle"></i> Resolve
+      </button>
+    </form>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="cs-card cs-card-body text-center py-5 text-muted">
+    <i class="bi bi-emoji-smile" style="font-size:2.5rem; color:var(--cs-success);"></i>
+    <p class="mt-2">No active risk flags. All students appear to be on track. 🎉</p>
+  </div>
+{% endif %}
+{% endblock %}

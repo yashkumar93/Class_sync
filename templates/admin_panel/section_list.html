@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Sections{% endblock %}
+{% block content %}
+<div class="cs-page-header d-flex align-items-center justify-content-between">
+  <h1><i class="bi bi-diagram-3 me-2" style="color:var(--cs-primary);"></i>Sections</h1>
+  <a href="{% url 'admin_panel:section_create' %}" class="btn-cs-primary"><i class="bi bi-plus"></i> Add</a>
+</div>
+<div class="cs-table-wrapper">
+  <table class="cs-table">
+    <thead><tr><th>Course</th><th>Section</th><th>Faculty</th><th>Room</th><th>Students</th><th>Attendance</th><th>Actions</th></tr></thead>
+    <tbody>
+    {% for s in sections %}
+    <tr>
+      <td class="fw-600">{{ s.course.code }}</td>
+      <td>{{ s.name }}</td>
+      <td>{{ s.faculty.get_full_name|default:"—" }}</td>
+      <td>{{ s.room|default:"—" }}</td>
+      <td><span class="cs-badge neutral">{{ s.student_count }}</span></td>
+      <td>
+        <a href="{% url 'attendance:section_dashboard' s.pk %}" class="btn-cs-secondary" style="font-size:0.75rem;padding:0.3rem 0.65rem;">
+          <i class="bi bi-bar-chart"></i>
+        </a>
+      </td>
+      <td><a href="{% url 'admin_panel:section_edit' s.pk %}" class="btn-cs-secondary" style="font-size:0.78rem;padding:0.3rem 0.7rem;"><i class="bi bi-pencil"></i></a></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="7" class="text-muted text-center py-4">No sections yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
