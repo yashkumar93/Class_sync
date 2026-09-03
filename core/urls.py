@@ -9,4 +9,6 @@ urlpatterns = [
     path("dashboard/", views.dashboard_redirect, name="dashboard"),
     path("faculty/dashboard/", views.FacultyDashboardView.as_view(), name="faculty_dashboard"),
     path("student/dashboard/", views.StudentDashboardView.as_view(), name="student_dashboard"),
+    path("timetable/", views.TimetableView.as_view(), name="timetable"),
 ]
+

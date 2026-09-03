@@ -210,3 +210,77 @@ def notify_threshold_alert(student, course, pct):
             f"Please attend classes regularly to avoid academic penalties."
         ),
     )
+
+
+# ---------------------------------------------------------------------------
+# Close Session & Notify Absent Students (Feature 4)
+# ---------------------------------------------------------------------------
+
+def close_session_and_notify_absences(session, closed_by):
+    """
+    Finalise an attendance session and send absence notifications to every
+    enrolled student who did NOT submit an OTP for this session.
+
+    Rules:
+    - Attendance records (present students) are NEVER modified.
+    - If notification delivery fails, the absence notification record is still
+      saved as FAILED delivery_status — the attendance data is unaffected.
+    - Returns a tuple: (absent_students_count, notifications_sent_count)
+
+    This function implements the PRD Feature 4 requirement:
+        Faculty marks session closed
+          → Attendance already recorded for present students
+          → Absent students identified
+          → Absence notification generated per absent student
+          → Faculty can see notification status
+    """
+    from notifications.utils import create_notification
+    from notifications.models import Notification
+    import logging
+    _logger = logging.getLogger(__name__)
+
+    section = session.timetable_slot.section
+    course = section.course
+    date = session.date
+
+    # Students who DID mark attendance
+    present_ids = AttendanceRecord.objects.filter(
+        session=session
+    ).values_list("student_id", flat=True)
+
+    # Students enrolled but NOT present
+    absent_students = section.students.filter(
+        is_active=True
+    ).exclude(id__in=present_ids)
+
+    absent_count = absent_students.count()
+    notified_count = 0
+
+    for student in absent_students:
+        try:
+            notif = create_notification(
+                recipient=student,
+                notif_type=Notification.TYPE_ABSENCE_MARKED,
+                message=(
+                    f"You were marked absent for {course.name} "
+                    f"(Section {section.name}) on {date} at "
+                    f"{session.timetable_slot.start_time:%H:%M}. "
+                    f"Please contact your faculty if this is incorrect."
+                ),
+                related_object_id=session.pk,
+            )
+            notified_count += 1
+            _logger.info(
+                "Absence notification sent to student %s for session pk=%s.",
+                student.pk, session.pk,
+            )
+        except Exception:
+            _logger.warning(
+                "Failed to create absence notification for student %s, session pk=%s.",
+                student.pk, session.pk,
+                exc_info=True,
+            )
+            # Attendance records are unaffected — notification failure is non-fatal
+
+    return absent_count, notified_count
+

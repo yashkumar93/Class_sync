@@ -1,13 +1,13 @@
-"""Absence app views."""
+"""Absence app views — broadcast substitute workflow."""
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from core.decorators import role_required
-from core.models import TimetableSlot, SystemConfig
-from .models import AbsenceReport, FacultyAvailability
-from .engine import propose_next_substitute, confirm_substitution, decline_or_timeout
+from core.models import TimetableSlot
+from .models import AbsenceReport, FacultyAvailability, SubstituteRequest
+from .engine import broadcast_substitute_requests, accept_substitute, decline_substitute
 from .forms import AbsenceReportForm
 
 
@@ -25,21 +25,19 @@ def report_absence(request):
             report.status = AbsenceReport.STATUS_PENDING
             report.save()
 
-            # Immediately kick off the reassignment engine
-            proposed = propose_next_substitute(report)
-            if proposed:
+            # Broadcast to all eligible faculty simultaneously
+            sent_count = broadcast_substitute_requests(report)
+            if sent_count > 0:
                 messages.success(
                     request,
-                    f"Absence reported. {proposed.get_full_name()} has been proposed as substitute "
-                    f"and has {SystemConfig.get().confirmation_window_minutes} minutes to confirm."
+                    f"Absence reported. Substitute request sent to {sent_count} eligible "
+                    f"faculty member(s). You will be notified once someone accepts."
                 )
             else:
-                # No eligible faculty → self-study
-                from .engine import mark_self_study
-                mark_self_study(report)
                 messages.warning(
                     request,
-                    "Absence reported. No eligible substitute found — period marked as Self-Study."
+                    "Absence reported. No eligible substitute found — "
+                    "period marked as Self-Study / Makeup."
                 )
             return redirect("absence:my_absences")
     else:
@@ -50,8 +48,10 @@ def report_absence(request):
 
 @role_required("faculty")
 def my_absences(request):
-    absences = AbsenceReport.objects.filter(faculty=request.user).select_related(
-        "timetable_slot__section__course", "proposed_substitute"
+    absences = AbsenceReport.objects.filter(faculty=request.user).prefetch_related(
+        "substitute_requests__requested_faculty",
+    ).select_related(
+        "timetable_slot__section__course", "assigned_substitute",
     ).order_by("-date")
     return render(request, "absence/my_absences.html", {"absences": absences})
 
@@ -74,38 +74,63 @@ def opt_in_status(request):
 
 
 # ---------------------------------------------------------------------------
-# Faculty: confirm / decline substitution
+# Faculty: accept / decline a substitute request (broadcast model)
 # ---------------------------------------------------------------------------
 
 @role_required("faculty")
 @require_POST
 def confirm_substitute(request, pk):
-    report = get_object_or_404(
-        AbsenceReport,
+    """
+    Accept a substitute request.
+    `pk` is the SubstituteRequest pk (not AbsenceReport pk).
+    """
+    sub_req = get_object_or_404(
+        SubstituteRequest,
         pk=pk,
-        proposed_substitute=request.user,
-        status=AbsenceReport.STATUS_PENDING_CONFIRMATION,
+        requested_faculty=request.user,
+        status=SubstituteRequest.STATUS_PENDING,
     )
-    if report.is_confirmation_expired:
-        messages.error(request, "Confirmation window has expired.")
-        return redirect("core:faculty_dashboard")
 
-    confirm_substitution(report)
-    messages.success(request, f"You have confirmed substitution for {report.timetable_slot.section.course.name} on {report.date}.")
+    success = accept_substitute(sub_req)
+    if success:
+        course = sub_req.absence_report.timetable_slot.section.course.name
+        date = sub_req.absence_report.date
+        messages.success(
+            request,
+            f"You have accepted the substitution for {course} on {date}. "
+            f"Students have been notified."
+        )
+    else:
+        messages.warning(
+            request,
+            "This substitute slot has already been taken by another faculty member."
+        )
     return redirect("core:faculty_dashboard")
 
 
 @role_required("faculty")
 @require_POST
 def decline_substitute(request, pk):
-    report = get_object_or_404(
-        AbsenceReport,
+    """
+    Decline a substitute request.
+    `pk` is the SubstituteRequest pk (not AbsenceReport pk).
+    """
+    sub_req = get_object_or_404(
+        SubstituteRequest,
         pk=pk,
-        proposed_substitute=request.user,
-        status=AbsenceReport.STATUS_PENDING_CONFIRMATION,
+        requested_faculty=request.user,
+        status=SubstituteRequest.STATUS_PENDING,
     )
-    decline_or_timeout(report)
-    messages.info(request, "You have declined the substitution request.")
+
+    all_declined = decline_substitute(sub_req)
+    if all_declined:
+        messages.info(
+            request,
+            "You declined the request. All eligible faculty have now declined — "
+            "the period has been marked as Unassigned."
+        )
+    else:
+        messages.info(request, "You have declined the substitution request.")
     return redirect("core:faculty_dashboard")
 
 

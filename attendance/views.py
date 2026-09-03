@@ -17,6 +17,8 @@ from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
+from django.views.decorators.http import require_POST
+
 
 from core.decorators import role_required
 from core.models import SystemConfig, Section, TimetableSlot
@@ -193,6 +195,7 @@ def section_dashboard(request, section_id):
         "threshold": config.attendance_threshold,
         "today_slots": today_slots,
         "today": today,
+        "students_per_page": config.default_students_per_page,
     })
 
 
@@ -204,3 +207,37 @@ def section_dashboard(request, section_id):
 def my_attendance(request):
     summary = get_student_attendance_summary(request.user)
     return render(request, "attendance/my_attendance.html", {"summary": summary})
+
+
+# ---------------------------------------------------------------------------
+# Faculty: Close Session & Notify Absent Students (Feature 4)
+# ---------------------------------------------------------------------------
+
+@role_required("faculty", "admin")
+@require_POST
+def close_session(request, session_id):
+    """
+    Faculty closes an attendance session and triggers absence notifications
+    for every enrolled student who did NOT mark attendance.
+
+    Attendance records for present students are not modified.
+    Notification failure never rolls back attendance data.
+    """
+    session = get_object_or_404(AttendanceSession, pk=session_id)
+
+    # Only the generator or admin can close
+    if request.user.role == "faculty" and session.generated_by != request.user:
+        from django.core.exceptions import PermissionDenied
+        raise PermissionDenied("Only the faculty who generated this session can close it.")
+
+    absent_count, notified_count = services.close_session_and_notify_absences(
+        session, closed_by=request.user
+    )
+
+    messages.success(
+        request,
+        f"Session closed. {absent_count} student(s) were absent; "
+        f"{notified_count} absence notification(s) sent."
+    )
+    return redirect("attendance:section_dashboard", section_id=session.timetable_slot.section_id)
+

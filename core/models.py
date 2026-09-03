@@ -180,6 +180,10 @@ class SystemConfig(models.Model):
         default=12,
         help_text="Minutes a proposed substitute has to confirm/decline before falling through to next.",
     )
+    default_students_per_page = models.PositiveSmallIntegerField(
+        default=15,
+        help_text="Default number of students shown per page in faculty class/attendance views.",
+    )
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

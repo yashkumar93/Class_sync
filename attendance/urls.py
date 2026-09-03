@@ -14,4 +14,7 @@ urlpatterns = [
     path("mark/", views.submit_otp, name="submit_otp"),
     # Student: personal attendance overview
     path("my/", views.my_attendance, name="my_attendance"),
+    # Faculty: close session and notify absent students
+    path("session/<int:session_id>/close/", views.close_session, name="close_session"),
 ]
+

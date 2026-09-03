@@ -6,32 +6,34 @@
   <div class="subtitle">{{ user.department.name|default:"Faculty Portal" }}</div>
 </div>
 
-<!-- Pending confirmations banner -->
-{% for report in pending_confirmations %}
+<!-- Pending substitute request banners (broadcast model) -->
+{% for sub_req in pending_sub_requests %}
 <div class="cs-alert warning" style="margin-bottom:0.75rem;">
   <i class="bi bi-hourglass-split"></i>
   <div>
-    <strong>Substitution Request:</strong> You have been proposed to cover
-    <strong>{{ report.timetable_slot.section.course.name }}</strong> (Section {{ report.timetable_slot.section.name }})
-    on <strong>{{ report.date }}</strong> at {{ report.timetable_slot.start_time|time:"H:i" }}.
-    <em>{{ report.faculty.get_full_name }}</em> is absent.
+    <strong>Substitute Request:</strong> You are invited to cover
+    <strong>{{ sub_req.absence_report.timetable_slot.section.course.name }}</strong>
+    (Section {{ sub_req.absence_report.timetable_slot.section.name }})
+    on <strong>{{ sub_req.absence_report.date }}</strong>
+    at {{ sub_req.absence_report.timetable_slot.start_time|time:"H:i" }}.
+    <em>{{ sub_req.absence_report.faculty.get_full_name }}</em> is absent.
     &mdash;
-    <form method="post" action="{% url 'absence:confirm_substitute' report.pk %}" style="display:inline;">
+    <form method="post" action="{% url 'absence:confirm_substitute' sub_req.pk %}" style="display:inline;">
       {% csrf_token %}
       <button class="btn-cs-success" style="font-size:0.8rem; padding:0.3rem 0.75rem; margin-left:0.5rem;">
         <i class="bi bi-check-lg"></i> Accept
       </button>
     </form>
-    <form method="post" action="{% url 'absence:decline_substitute' report.pk %}" style="display:inline;">
+    <form method="post" action="{% url 'absence:decline_substitute' sub_req.pk %}" style="display:inline;">
       {% csrf_token %}
       <button class="btn-cs-danger" style="font-size:0.8rem; padding:0.3rem 0.75rem; margin-left:0.25rem;">
         <i class="bi bi-x-lg"></i> Decline
       </button>
     </form>
-    <br><small class="text-muted">Deadline: {{ report.confirmation_deadline|date:"H:i, d M" }}</small>
   </div>
 </div>
 {% endfor %}
+
 
 <div class="row g-3">
   <!-- Today's classes -->

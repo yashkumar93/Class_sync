@@ -5,33 +5,84 @@
   <h1><i class="bi bi-clock-history me-2" style="color:var(--cs-primary);"></i>My Absences</h1>
   <a href="{% url 'absence:report_absence' %}" class="btn-cs-primary"><i class="bi bi-plus-circle"></i> Report New</a>
 </div>
-<div class="cs-table-wrapper">
-  <table class="cs-table">
-    <thead>
-      <tr><th>Date</th><th>Class</th><th>Period</th><th>Status</th><th>Substitute</th><th>Makeup?</th></tr>
-    </thead>
-    <tbody>
-    {% for a in absences %}
-    <tr>
-      <td>{{ a.date }}</td>
-      <td>{{ a.timetable_slot.section.course.name }}</td>
-      <td>P{{ a.timetable_slot.period_number }} {{ a.timetable_slot.start_time|time:"H:i" }}</td>
-      <td>
-        {% if a.status == 'reassigned' %}<span class="cs-badge success"><i class="bi bi-check-circle"></i> Reassigned</span>
-        {% elif a.status == 'self_study' %}<span class="cs-badge warning"><i class="bi bi-book"></i> Self-Study</span>
-        {% elif a.status == 'pending_confirmation' %}<span class="cs-badge info"><i class="bi bi-hourglass"></i> Pending</span>
-        {% else %}<span class="cs-badge neutral">{{ a.get_status_display }}</span>{% endif %}
-      </td>
-      <td>{{ a.proposed_substitute.get_full_name|default:"—" }}</td>
-      <td>
-        {% if a.is_makeup_candidate %}<span class="cs-badge danger"><i class="bi bi-flag"></i> Yes</span>
-        {% else %}<span class="text-muted">—</span>{% endif %}
-      </td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="6" class="text-muted text-center py-4">No absences reported yet.</td></tr>
-    {% endfor %}
-    </tbody>
-  </table>
+
+{% if absences %}
+{% for a in absences %}
+<div class="cs-card" style="margin-bottom:1rem;">
+  <div class="cs-card-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <div>
+      <strong>{{ a.timetable_slot.section.course.name }}</strong>
+      — Section {{ a.timetable_slot.section.name }}
+      &nbsp;&bull;&nbsp;
+      <span class="text-muted">{{ a.date }}</span>
+      &nbsp;&bull;&nbsp;
+      P{{ a.timetable_slot.period_number }} {{ a.timetable_slot.start_time|time:"H:i" }}
+    </div>
+    <div>
+      {% if a.status == 'assigned' or a.status == 'reassigned' %}
+        <span class="cs-badge success"><i class="bi bi-check-circle"></i> Assigned</span>
+      {% elif a.status == 'unassigned' %}
+        <span class="cs-badge danger"><i class="bi bi-x-circle"></i> Unassigned</span>
+      {% elif a.status == 'self_study' %}
+        <span class="cs-badge warning"><i class="bi bi-book"></i> Self-Study</span>
+      {% elif a.status == 'pending' or a.status == 'pending_confirmation' %}
+        <span class="cs-badge info"><i class="bi bi-hourglass"></i> Pending</span>
+      {% else %}
+        <span class="cs-badge neutral">{{ a.get_status_display }}</span>
+      {% endif %}
+    </div>
+  </div>
+  <div class="cs-card-body" style="padding:0.75rem 1rem;">
+    {% if a.is_makeup_candidate %}
+      <div style="margin-bottom:0.5rem;"><span class="cs-badge danger"><i class="bi bi-flag"></i> Makeup Candidate</span></div>
+    {% endif %}
+    {% if a.assigned_substitute %}
+      <p style="margin:0;"><strong>Substitute Assigned:</strong> {{ a.assigned_substitute.get_full_name }}</p>
+    {% endif %}
+
+    <!-- Substitute requests breakdown -->
+    {% with reqs=a.substitute_requests.all %}
+    {% if reqs %}
+    <p style="margin:0.5rem 0 0.25rem;font-weight:600;font-size:0.85rem;color:var(--cs-text-muted);">
+      Substitute Requests ({{ reqs.count }})
+    </p>
+    <div class="cs-table-wrapper" style="border:none;box-shadow:none;border-radius:0;">
+      <table class="cs-table" style="font-size:0.85rem;">
+        <thead><tr><th>Faculty</th><th>Status</th><th>Responded</th></tr></thead>
+        <tbody>
+        {% for req in reqs %}
+        <tr>
+          <td>{{ req.requested_faculty.get_full_name }}</td>
+          <td>
+            {% if req.status == 'accepted' %}
+              <span class="cs-badge success"><i class="bi bi-check"></i> Accepted</span>
+            {% elif req.status == 'declined' %}
+              <span class="cs-badge danger"><i class="bi bi-x"></i> Declined</span>
+            {% elif req.status == 'cancelled' %}
+              <span class="cs-badge neutral"><i class="bi bi-dash"></i> Cancelled</span>
+            {% else %}
+              <span class="cs-badge info"><i class="bi bi-hourglass"></i> Pending</span>
+            {% endif %}
+          </td>
+          <td>{{ req.responded_at|date:"H:i, d M"|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted" style="margin:0;font-size:0.85rem;">No substitute requests generated yet.</p>
+    {% endif %}
+    {% endwith %}
+  </div>
 </div>
+{% endfor %}
+{% else %}
+<div class="cs-card">
+  <div class="cs-card-body text-center text-muted py-4">
+    <i class="bi bi-calendar-check" style="font-size:2rem;"></i><br>
+    No absences reported yet.
+  </div>
+</div>
+{% endif %}
 {% endblock %}

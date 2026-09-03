@@ -117,6 +117,9 @@
     <a href="{% url 'absence:substitution_history' %}" class="nav-link">
       <i class="bi bi-arrow-left-right"></i> Sub. History
     </a>
+    <a href="{% url 'core:timetable' %}" class="nav-link {% if request.resolver_match.url_name == 'timetable' %}active{% endif %}">
+      <i class="bi bi-calendar-week"></i> Timetable
+    </a>
     <a href="{% url 'notifications:risk_flags' %}" class="nav-link">
       <i class="bi bi-flag"></i> Risk Flags
     </a>
@@ -134,6 +137,9 @@
     </a>
     <a href="{% url 'assignments:student_list' %}" class="nav-link">
       <i class="bi bi-file-earmark-text"></i> Assignments
+    </a>
+    <a href="{% url 'core:timetable' %}" class="nav-link {% if request.resolver_match.url_name == 'timetable' %}active{% endif %}">
+      <i class="bi bi-calendar-week"></i> Timetable
     </a>
   {% endif %}
 

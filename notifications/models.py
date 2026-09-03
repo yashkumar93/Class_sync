@@ -12,6 +12,7 @@ class Notification(models.Model):
     TYPE_ASSIGNMENT_REMINDER = "assignment_reminder"
     TYPE_ATTENDANCE_ALERT = "attendance_alert"
     TYPE_RISK_FLAG = "risk_flag"
+    TYPE_ABSENCE_MARKED = "absence_marked"   # student marked absent by faculty
 
     TYPE_CHOICES = [
         (TYPE_SUBSTITUTION_REQUEST, "Substitution Request"),
@@ -22,6 +23,21 @@ class Notification(models.Model):
         (TYPE_ASSIGNMENT_REMINDER, "Assignment Reminder"),
         (TYPE_ATTENDANCE_ALERT, "Attendance Alert"),
         (TYPE_RISK_FLAG, "Early-Warning Flag"),
+        (TYPE_ABSENCE_MARKED, "Absence Marked"),
+    ]
+
+    # Delivery status for tracking the notification pipeline
+    DELIVERY_PENDING   = "pending"
+    DELIVERY_SENT      = "sent"
+    DELIVERY_DELIVERED = "delivered"
+    DELIVERY_READ      = "read"
+    DELIVERY_FAILED    = "failed"
+    DELIVERY_CHOICES = [
+        (DELIVERY_PENDING,   "Pending"),
+        (DELIVERY_SENT,      "Sent"),
+        (DELIVERY_DELIVERED, "Delivered"),
+        (DELIVERY_READ,      "Read"),
+        (DELIVERY_FAILED,    "Failed"),
     ]
 
     recipient = models.ForeignKey(
@@ -35,6 +51,12 @@ class Notification(models.Model):
     )
     sent_at = models.DateTimeField(auto_now_add=True)
     read_at = models.DateTimeField(null=True, blank=True)
+    delivery_status = models.CharField(
+        max_length=15,
+        choices=DELIVERY_CHOICES,
+        default=DELIVERY_PENDING,
+        help_text="Tracks the delivery pipeline: PENDING → SENT → DELIVERED → READ / FAILED",
+    )
 
     class Meta:
         ordering = ["-sent_at"]
