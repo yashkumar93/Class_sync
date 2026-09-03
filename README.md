@@ -88,7 +88,7 @@ The application will now be running at `http://127.0.0.1:8000/`.
 
 If you ran the `python manage.py seed_demo` command, your database is now populated with the following data:
 
-- **1 Department**: Computer Science & Engineering (CSE)
+- **1 Department**: Computer Science & Engineering (CS)
 - **3 Courses & 3 Sections**
 - **Timetable Slots** from Monday to Friday
 - **3 Sample Assignments**

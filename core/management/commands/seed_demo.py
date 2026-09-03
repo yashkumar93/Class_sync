@@ -21,7 +21,7 @@ from assignments.models import Assignment
 
 
 FACULTY_DATA = [
-    ("alice.sharma", "Alice", "Sharma"),
+    ("dr.naseer", "DR", "Naseer"),
     ("bob.nair", "Bob", "Nair"),
     ("carol.iyer", "Carol", "Iyer"),
     ("david.menon", "David", "Menon"),
@@ -47,7 +47,7 @@ class Command(BaseCommand):
         SystemConfig.objects.get_or_create(pk=1)
 
         # Department
-        dept, _ = Department.objects.get_or_create(code="CSE", defaults={"name": "Computer Science & Engineering"})
+        dept, _ = Department.objects.get_or_create(code="CS", defaults={"name": "Computer Science & Engineering"})
 
         # Admin user
         if not User.objects.filter(username="admin_demo").exists():
@@ -98,9 +98,9 @@ class Command(BaseCommand):
 
         # Courses
         courses_data = [
-            ("CSE101", "Introduction to Programming"),
-            ("CSE201", "Data Structures"),
-            ("CSE301", "Database Management Systems"),
+            ("CS101", "Introduction to Programming"),
+            ("CS201", "Data Structures"),
+            ("CS301", "Database Management Systems"),
         ]
         courses = []
         for code, name in courses_data:
@@ -171,5 +171,5 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("\nSeed complete! Login at /login/"))
         self.stdout.write("  Admin:   admin_demo / Admin@1234")
-        self.stdout.write("  Faculty: alice.sharma / Faculty@1234")
+        self.stdout.write("  Faculty: dr.naseer / Faculty@1234")
         self.stdout.write("  Student: s001 / Student@1234")
