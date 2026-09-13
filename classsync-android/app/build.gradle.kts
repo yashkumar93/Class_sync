@@ -59,7 +59,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            buildConfigField("String", "BASE_URL", "\"https://your-server.com/\"")
+            buildConfigField("String", "BASE_URL", "\"https://class-sync-ah7n.onrender.com/\"")
             if (hasReleaseSigning) signingConfig = signingConfigs.getByName("release")
         }
         debug {
