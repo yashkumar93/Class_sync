@@ -15,6 +15,16 @@ from absence.models import (
 from notifications.models import Notification, DeviceToken, RiskFlag, Announcement
 
 # ---------------------------------------------------------------------------
+# Auth
+# ---------------------------------------------------------------------------
+
+
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField(write_only=True)
+
+
+# ---------------------------------------------------------------------------
 # Core Models
 # ---------------------------------------------------------------------------
 

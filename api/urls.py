@@ -10,6 +10,8 @@ app_name = "api"
 
 urlpatterns = [
     # ── Auth ──────────────────────────────────────────────────────────────
+    path("auth/login/", views.login_view, name="login"),
+    path("auth/refresh/", views.refresh_token_view, name="token_refresh"),
     path("auth/me/", views.me_view, name="me"),
 
     # ── Dashboards ────────────────────────────────────────────────────────

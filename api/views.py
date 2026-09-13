@@ -44,6 +44,7 @@ from notifications.utils import create_notification, mark_read, mark_all_read
 
 from .permissions import IsAdmin, IsFaculty, IsStudent, IsFacultyOrAdmin
 from .serializers import (
+    LoginSerializer,
     UserSerializer,
     SectionSerializer,
     TimetableSlotSerializer,
@@ -73,7 +74,73 @@ from .serializers import (
 # AUTH
 # ═══════════════════════════════════════════════════════════════════════════
 
+from supabase import create_client, Client
+from django.conf import settings
 
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def login_view(request):
+    """Authenticate via Supabase and return JWT tokens + user profile."""
+    serializer = LoginSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    username = serializer.validated_data["username"]
+    password = serializer.validated_data["password"]
+    
+    try:
+        supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+        auth_response = supabase.auth.sign_in_with_password({"email": username, "password": password})
+        session = auth_response.session
+        if not session:
+            return Response({"detail": "Unable to sign in with provided credentials."}, status=status.HTTP_401_UNAUTHORIZED)
+            
+        # Ensure the user exists in our local DB
+        supabase_user = auth_response.user
+        user = User.objects.filter(supabase_uid=supabase_user.id).first()
+        if not user and supabase_user.email:
+            user = User.objects.filter(email=supabase_user.email).first()
+            if user:
+                user.supabase_uid = supabase_user.id
+                user.save(update_fields=['supabase_uid'])
+        if not user:
+            user = User.objects.create_user(
+                username=supabase_user.email or str(supabase_user.id),
+                email=supabase_user.email or "",
+                role=User.ROLE_STUDENT,
+                supabase_uid=supabase_user.id
+            )
+
+        return Response(
+            {
+                "refresh": session.refresh_token,
+                "access": session.access_token,
+                "user": UserSerializer(user).data,
+            }
+        )
+    except Exception as e:
+        return Response({"detail": str(e)}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def refresh_token_view(request):
+    """Refresh JWT using a refresh token via Supabase."""
+    refresh_token = request.data.get("refresh")
+    if not refresh_token:
+        return Response({"detail": "Refresh token is required"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+        auth_response = supabase.auth.refresh_session(refresh_token)
+        session = auth_response.session
+        if not session:
+            return Response({"detail": "Invalid refresh token"}, status=status.HTTP_401_UNAUTHORIZED)
+            
+        return Response({
+            "access": session.access_token,
+            "refresh": session.refresh_token,
+        })
+    except Exception as e:
+        return Response({"detail": str(e)}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 @api_view(["GET"])
