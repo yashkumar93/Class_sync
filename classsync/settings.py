@@ -20,7 +20,9 @@ if RENDER_HOSTNAME:
     ALLOWED_HOSTS += [RENDER_HOSTNAME, ".onrender.com"]
 
 
-# Supabase Auth Settings (Removed)
+# Supabase Auth Settings
+SUPABASE_URL = env("SUPABASE_URL", default="")
+SUPABASE_KEY = env("SUPABASE_KEY", default="")
 
 INSTALLED_APPS = [
     # Django built-ins
@@ -131,7 +133,7 @@ CLASSSYNC_DEFAULT_STUDENTS_PER_PAGE = 15
 # ---------------------------------------------------------------------------
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "api.authentication.SupabaseJWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": (

@@ -44,7 +44,6 @@ from notifications.utils import create_notification, mark_read, mark_all_read
 
 from .permissions import IsAdmin, IsFaculty, IsStudent, IsFacultyOrAdmin
 from .serializers import (
-    LoginSerializer,
     UserSerializer,
     SectionSerializer,
     TimetableSlotSerializer,
@@ -75,38 +74,6 @@ from .serializers import (
 # ═══════════════════════════════════════════════════════════════════════════
 
 
-@api_view(["POST"])
-@permission_classes([AllowAny])
-def login_view(request):
-    """Authenticate and return JWT tokens + user profile."""
-    serializer = LoginSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    user = serializer.validated_data["user"]
-    refresh = RefreshToken.for_user(user)
-    return Response(
-        {
-            "refresh": str(refresh),
-            "access": str(refresh.access_token),
-            "user": UserSerializer(user).data,
-        }
-    )
-
-
-@api_view(["POST"])
-@permission_classes([AllowAny])
-def refresh_token_view(request):
-    """Refresh JWT using a refresh token."""
-    refresh_token = request.data.get("refresh")
-    if not refresh_token:
-        return Response({"detail": "Refresh token is required"}, status=status.HTTP_400_BAD_REQUEST)
-    try:
-        refresh = RefreshToken(refresh_token)
-        return Response({
-            "access": str(refresh.access_token),
-            "refresh": str(refresh),
-        })
-    except Exception:
-        return Response({"detail": "Invalid refresh token"}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 @api_view(["GET"])
