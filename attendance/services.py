@@ -31,12 +31,15 @@ def get_effective_faculty(timetable_slot, date):
     absence = AbsenceReport.objects.filter(
         timetable_slot=timetable_slot,
         date=date,
-        status=AbsenceReport.STATUS_REASSIGNED,
+        status__in=(
+            AbsenceReport.STATUS_ASSIGNED,
+            AbsenceReport.STATUS_REASSIGNED,
+        ),
     ).first()
 
     if absence:
         try:
-            return SubstitutionRecord.objects.get(
+            return absence.assigned_substitute or SubstitutionRecord.objects.get(
                 absence_report=absence
             ).substitute_faculty
         except SubstitutionRecord.DoesNotExist:
@@ -283,4 +286,3 @@ def close_session_and_notify_absences(session, closed_by):
             # Attendance records are unaffected — notification failure is non-fatal
 
     return absent_count, notified_count
-

@@ -7,8 +7,10 @@ is wired in exactly once. Every prior Phase 1-3 caller imports from
 notifications.utils, which re-exports from here.
 """
 import logging
+from pathlib import Path
 from datetime import timedelta
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
@@ -35,7 +37,9 @@ def create_notification(recipient, notif_type, message, related_object_id=None):
     )
 
     try:
-        send_push(recipient, message)
+        if send_push(recipient, notif_type, message, related_object_id):
+            notification.delivery_status = Notification.DELIVERY_SENT
+            notification.save(update_fields=["delivery_status"])
     except Exception:
         logger.warning(
             "Push delivery failed for user %s (notification pk=%s) — "
@@ -51,7 +55,7 @@ def create_notification(recipient, notif_type, message, related_object_id=None):
 # FCM Push Delivery (pluggable stub)
 # ---------------------------------------------------------------------------
 
-def send_push(user, message):
+def _legacy_send_push(user, message):
     """
     Attempt to send a push notification via FCM to all of the user's
     registered device tokens.
@@ -95,6 +99,48 @@ def send_push(user, message):
 
 
 # ---------------------------------------------------------------------------
+# Active FCM delivery path. It is intentionally lazy so local development
+# works without Firebase credentials or the firebase-admin package installed.
+def send_push(user, notif_type, message, related_object_id=None):
+    tokens = list(DeviceToken.objects.filter(user=user).values_list("token", flat=True))
+    if not tokens:
+        return False
+    try:
+        import firebase_admin
+        from firebase_admin import credentials, messaging
+    except ImportError:
+        logger.debug("firebase-admin is not installed; push delivery skipped.")
+        return False
+    if not firebase_admin._apps:
+        credential_path = getattr(settings, "FIREBASE_CREDENTIALS", "")
+        if not credential_path or not Path(credential_path).is_file():
+            logger.info("Firebase credentials are not configured; push delivery skipped.")
+            return False
+        firebase_admin.initialize_app(credentials.Certificate(credential_path))
+    sent = False
+    for token in tokens:
+        try:
+            messaging.send(messaging.Message(
+                # Data-only messages ensure Android can create its own channel,
+                # notification grouping, and deep link in foreground/background.
+                data={
+                    "type": notif_type,
+                    "related_object_id": str(related_object_id or ""),
+                    "title": "ClassSync",
+                    "message": message[:500],
+                },
+                android=messaging.AndroidConfig(priority="high"),
+                token=token,
+            ))
+            sent = True
+        except messaging.UnregisteredError:
+            DeviceToken.objects.filter(token=token).delete()
+            logger.info("Removed expired FCM token %s", token[:12])
+        except Exception as exc:
+            logger.warning("Push failed for token %s: %s", token[:12], exc)
+    return sent
+
+
 # Announcements
 # ---------------------------------------------------------------------------
 

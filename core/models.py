@@ -39,6 +39,9 @@ class User(AbstractUser):
     )
     is_active = models.BooleanField(default=True)
     date_joined_platform = models.DateField(auto_now_add=True)
+    
+    # Supabase link
+    supabase_uid = models.UUIDField(null=True, blank=True, unique=True)
 
     # Student-specific
     roll_number = models.CharField(max_length=30, blank=True)

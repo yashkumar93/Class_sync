@@ -5,3 +5,16 @@ crispy-bootstrap5>=2024.2
 Pillow>=10.0
 APScheduler>=3.10
 mysqlclient>=2.2  # swap in for MySQL on staging/prod; comment out for SQLite dev
+# REST API for Android app
+djangorestframework>=3.15
+django-cors-headers>=4.3
+djangorestframework-simplejwt>=5.3
+firebase-admin>=6.5
+
+# Postgres & Supabase
+psycopg2-binary>=2.9
+supabase>=2.3
+
+# Production deployment
+gunicorn>=22.0
+whitenoise[brotli]>=6.7

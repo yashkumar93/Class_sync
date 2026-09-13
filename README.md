@@ -115,3 +115,51 @@ Class Sync includes several background tasks and commands that can be run manual
 - **Check Confirmation Timeouts (Absence)**: `python manage.py check_confirmation_timeouts`
 - **Send Assignment Reminders**: `python manage.py send_assignment_reminders`
 - **Evaluate Early Warnings (Notifications)**: `python manage.py evaluate_early_warning`
+
+---
+
+## Android app
+
+The native Compose client lives in `classsync-android/`. Debug builds target
+`http://10.0.2.2:8000/`, the Android emulator alias for the development
+machine. For a physical device, change the debug `BASE_URL` to a reachable
+HTTPS endpoint (or tunnel) and add its host to `ALLOWED_HOSTS`.
+
+Open `classsync-android/` in Android Studio using JDK 17, then build the debug
+variant. The client supports Android 8.0+ (API 26). Verify the server API with:
+
+```bash
+python manage.py test api
+```
+
+### Firebase push setup
+
+1. Put the Firebase Android `google-services.json` in `classsync-android/app/`.
+   The Gradle Google Services plugin activates automatically when the file is present.
+2. Install `firebase-admin` from `requirements.txt`, then set
+   `FIREBASE_CREDENTIALS` to the deployed server's service-account JSON path.
+3. Rebuild the app and sign in once to register its FCM device token.
+
+Before Firebase is configured, notifications are still saved and displayed
+in-app; server push delivery is safely skipped.
+
+### Test and release build
+
+Use JDK 17 and an Android SDK containing platform 35, then run:
+
+```powershell
+cd classsync-android
+.\gradlew.bat test lint assembleDebug
+```
+
+For a signed release, copy the values from
+`classsync-android/gradle.properties.example` into an untracked Gradle
+properties file (or provide them as `-P` arguments), then run:
+
+```powershell
+.\gradlew.bat bundleRelease
+```
+
+The release AAB is written to `app/build/outputs/bundle/release/`. Signing
+material, Firebase configuration, and generated Android build files are
+excluded from version control.

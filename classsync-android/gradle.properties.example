@@ -1,0 +1,6 @@
+# Copy values to ~/.gradle/gradle.properties or a local untracked gradle.properties.
+# Never commit passwords or keystore paths.
+CLASSSYNC_RELEASE_STORE_FILE=/absolute/path/to/classsync-release.jks
+CLASSSYNC_RELEASE_STORE_PASSWORD=change-me
+CLASSSYNC_RELEASE_KEY_ALIAS=classsync
+CLASSSYNC_RELEASE_KEY_PASSWORD=change-me
