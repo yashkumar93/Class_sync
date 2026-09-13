@@ -13,6 +13,13 @@ SECRET_KEY = env("SECRET_KEY", default="django-insecure-dev-key-change-in-prod")
 DEBUG = env("DEBUG")
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["127.0.0.1", "localhost", "10.0.2.2"])
 
+# Automatically allow the Render-assigned hostname (RENDER_EXTERNAL_HOSTNAME is
+# injected by Render into every service's environment automatically).
+RENDER_HOSTNAME = env("RENDER_EXTERNAL_HOSTNAME", default="")
+if RENDER_HOSTNAME:
+    ALLOWED_HOSTS += [RENDER_HOSTNAME, ".onrender.com"]
+
+
 # Supabase Auth Settings
 SUPABASE_URL = env("SUPABASE_URL", default="")
 SUPABASE_KEY = env("SUPABASE_KEY", default="")
