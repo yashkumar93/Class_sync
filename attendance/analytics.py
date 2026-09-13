@@ -45,6 +45,9 @@ def get_student_attendance_summary(student):
         ).count()
         pct = round((attended / total) * 100, 1) if total > 0 else 0.0
         summary.append({
+            "course_id": section.course.id,
+            "course_code": section.course.code,
+            "course_name": section.course.name,
             "section": section,
             "total_sessions": total,
             "attended": attended,

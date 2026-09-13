@@ -20,9 +20,7 @@ if RENDER_HOSTNAME:
     ALLOWED_HOSTS += [RENDER_HOSTNAME, ".onrender.com"]
 
 
-# Supabase Auth Settings
-SUPABASE_URL = env("SUPABASE_URL", default="")
-SUPABASE_KEY = env("SUPABASE_KEY", default="")
+# Supabase Auth Settings (Removed)
 
 INSTALLED_APPS = [
     # Django built-ins

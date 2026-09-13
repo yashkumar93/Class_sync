@@ -193,9 +193,9 @@ class AttendanceRecordSerializer(serializers.ModelSerializer):
 class AttendanceSummarySerializer(serializers.Serializer):
     """Per-course attendance summary for a student."""
 
-    course_id = serializers.IntegerField(source="section.course.id")
-    course_code = serializers.CharField(source="section.course.code")
-    course_name = serializers.CharField(source="section.course.name")
+    course_id = serializers.IntegerField()
+    course_code = serializers.CharField()
+    course_name = serializers.CharField()
     total_sessions = serializers.IntegerField()
     attended = serializers.IntegerField()
     percentage = serializers.FloatField()

@@ -26,7 +26,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Base URL for the Django API — change for production
-        buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8000/\"")
+        buildConfigField("String", "BASE_URL", "\"https://class-sync-ah7n.onrender.com/\"")
     }
 
     val releaseStoreFile = providers.gradleProperty("CLASSSYNC_RELEASE_STORE_FILE").orNull
@@ -65,7 +65,7 @@ android {
         debug {
             isMinifyEnabled = false
             // 10.0.2.2 maps to host loopback on Android emulator
-            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8000/\"")
+            buildConfigField("String", "BASE_URL", "\"https://class-sync-ah7n.onrender.com/\"")
         }
     }
 
