@@ -76,48 +76,89 @@ from .serializers import (
 
 from supabase import create_client, Client
 from django.conf import settings
+import logging
+
+_auth_logger = logging.getLogger("classsync.auth")
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def login_view(request):
-    """Authenticate via Supabase and return JWT tokens + user profile."""
+    """
+    Authenticate via Supabase and return JWT tokens + user profile.
+
+    The Android app sends a username + password. Since Supabase requires an
+    email address, we first look up the user's email from the local Django DB,
+    then authenticate against Supabase with that email.
+    """
     serializer = LoginSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    username = serializer.validated_data["username"]
+    username_or_email = serializer.validated_data["username"]
     password = serializer.validated_data["password"]
-    
-    try:
-        supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
-        auth_response = supabase.auth.sign_in_with_password({"email": username, "password": password})
-        session = auth_response.session
-        if not session:
-            return Response({"detail": "Unable to sign in with provided credentials."}, status=status.HTTP_401_UNAUTHORIZED)
-            
-        # Ensure the user exists in our local DB
-        supabase_user = auth_response.user
-        user = User.objects.filter(supabase_uid=supabase_user.id).first()
-        if not user and supabase_user.email:
-            user = User.objects.filter(email=supabase_user.email).first()
-            if user:
-                user.supabase_uid = supabase_user.id
-                user.save(update_fields=['supabase_uid'])
-        if not user:
-            user = User.objects.create_user(
-                username=supabase_user.email or str(supabase_user.id),
-                email=supabase_user.email or "",
-                role=User.ROLE_STUDENT,
-                supabase_uid=supabase_user.id
+
+    # --- Step 1: Resolve the login identifier to an email ---
+    # If the user typed a plain username, look it up in Django to get the email.
+    if "@" in username_or_email:
+        email = username_or_email
+    else:
+        try:
+            local_user = User.objects.get(username=username_or_email)
+            email = local_user.email
+            if not email:
+                _auth_logger.warning("User '%s' has no email set in local DB.", username_or_email)
+                return Response(
+                    {"detail": "No email is linked to this username. Please contact your admin."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        except User.DoesNotExist:
+            _auth_logger.warning("Login attempt for unknown username: %s", username_or_email)
+            return Response(
+                {"detail": "Invalid username or password."},
+                status=status.HTTP_401_UNAUTHORIZED,
             )
 
-        return Response(
-            {
-                "refresh": session.refresh_token,
-                "access": session.access_token,
-                "user": UserSerializer(user).data,
-            }
+    # --- Step 2: Authenticate against Supabase ---
+    try:
+        supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+        auth_response = supabase.auth.sign_in_with_password(
+            {"email": email, "password": password}
         )
+        session = auth_response.session
+        if not session:
+            return Response(
+                {"detail": "Unable to sign in with provided credentials."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
     except Exception as e:
-        return Response({"detail": str(e)}, status=status.HTTP_401_UNAUTHORIZED)
+        _auth_logger.error("Supabase sign-in failed for email %s: %s", email, e)
+        return Response(
+            {"detail": "Invalid username or password."},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    # --- Step 3: Sync Supabase user → local Django user ---
+    supabase_user = auth_response.user
+    user = User.objects.filter(supabase_uid=supabase_user.id).first()
+    if not user and supabase_user.email:
+        user = User.objects.filter(email=supabase_user.email).first()
+        if user:
+            user.supabase_uid = supabase_user.id
+            user.save(update_fields=["supabase_uid"])
+    if not user:
+        user = User.objects.create_user(
+            username=supabase_user.email or str(supabase_user.id),
+            email=supabase_user.email or "",
+            role=User.ROLE_STUDENT,
+            supabase_uid=supabase_user.id,
+        )
+
+    _auth_logger.info("Successful login for user %s (pk=%s)", user.username, user.pk)
+    return Response(
+        {
+            "refresh": session.refresh_token,
+            "access": session.access_token,
+            "user": UserSerializer(user).data,
+        }
+    )
 
 
 @api_view(["POST"])
