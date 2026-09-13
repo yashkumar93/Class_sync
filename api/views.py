@@ -920,3 +920,12 @@ def timetable_grid(request):
             "today_weekday": today_weekday,
         }
     )
+
+
+# ── Health check ─────────────────────────────────────────────────────────────
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def health_check(request):
+    """Unauthenticated endpoint used by keep-alive pings to prevent Render free-tier sleep."""
+    return Response({"status": "ok"})

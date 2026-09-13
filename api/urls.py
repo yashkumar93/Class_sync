@@ -109,4 +109,7 @@ urlpatterns = [
 
     # ── Timetable ─────────────────────────────────────────────────────────
     path("timetable/", views.timetable_grid, name="timetable_grid"),
+
+    # ── Health check (no auth — used by keep-alive ping) ──────────────────
+    path("health/", views.health_check, name="health_check"),
 ]
