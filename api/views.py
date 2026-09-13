@@ -97,24 +97,20 @@ def login_view(request):
 
     # --- Step 1: Resolve the login identifier to an email ---
     # If the user typed a plain username, look it up in Django to get the email.
+    # If the Django user has no email yet (not yet synced), fall back to the
+    # synthetic @classsync.app email that was seeded into Supabase.
     if "@" in username_or_email:
         email = username_or_email
     else:
         try:
             local_user = User.objects.get(username=username_or_email)
-            email = local_user.email
-            if not email:
-                _auth_logger.warning("User '%s' has no email set in local DB.", username_or_email)
-                return Response(
-                    {"detail": "No email is linked to this username. Please contact your admin."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+            # Use stored email if available, otherwise use the seeded synthetic email
+            email = local_user.email if local_user.email else f"{username_or_email}@classsync.app"
         except User.DoesNotExist:
+            # User not in Django DB yet — try synthetic email directly
+            # (This shouldn't normally happen for seeded users)
             _auth_logger.warning("Login attempt for unknown username: %s", username_or_email)
-            return Response(
-                {"detail": "Invalid username or password."},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
+            email = f"{username_or_email}@classsync.app"
 
     # --- Step 2: Authenticate against Supabase ---
     try:
@@ -137,16 +133,30 @@ def login_view(request):
 
     # --- Step 3: Sync Supabase user → local Django user ---
     supabase_user = auth_response.user
+    supa_email = supabase_user.email or ""
     user = User.objects.filter(supabase_uid=supabase_user.id).first()
-    if not user and supabase_user.email:
-        user = User.objects.filter(email=supabase_user.email).first()
+
+    if not user and supa_email:
+        # Try matching by email in Django first
+        user = User.objects.filter(email=supa_email).first()
         if user:
             user.supabase_uid = supabase_user.id
             user.save(update_fields=["supabase_uid"])
+
+    if not user and supa_email.endswith("@classsync.app"):
+        # Seeded users: email = <username>@classsync.app, so extract the username
+        derived_username = supa_email.replace("@classsync.app", "")
+        user = User.objects.filter(username=derived_username).first()
+        if user:
+            user.supabase_uid = supabase_user.id
+            user.email = supa_email   # Save the email so future lookups are direct
+            user.save(update_fields=["supabase_uid", "email"])
+
     if not user:
+        # Completely new user — create a minimal Django record
         user = User.objects.create_user(
-            username=supabase_user.email or str(supabase_user.id),
-            email=supabase_user.email or "",
+            username=supa_email.split("@")[0] if supa_email else str(supabase_user.id),
+            email=supa_email,
             role=User.ROLE_STUDENT,
             supabase_uid=supabase_user.id,
         )

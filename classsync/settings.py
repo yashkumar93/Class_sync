@@ -23,6 +23,7 @@ if RENDER_HOSTNAME:
 # Supabase Auth Settings
 SUPABASE_URL = env("SUPABASE_URL", default="")
 SUPABASE_KEY = env("SUPABASE_KEY", default="")
+SUPABASE_SERVICE_ROLE_KEY = env("SUPABASE_SERVICE_ROLE_KEY", default="")
 
 INSTALLED_APPS = [
     # Django built-ins
