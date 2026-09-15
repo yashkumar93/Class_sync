@@ -5,7 +5,6 @@
 PYTHON_VERSION = "3.12"
 
 [phases.setup]
-# libpq-dev needed by psycopg2; gcc for C extensions
 aptPkgs = ["libpq-dev", "gcc"]
 
 [phases.install]
