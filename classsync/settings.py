@@ -13,17 +13,18 @@ SECRET_KEY = env("SECRET_KEY", default="django-insecure-dev-key-change-in-prod")
 DEBUG = env("DEBUG")
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["127.0.0.1", "localhost", "10.0.2.2"])
 
-# Automatically allow the Render-assigned hostname (RENDER_EXTERNAL_HOSTNAME is
-# injected by Render into every service's environment automatically).
-RENDER_HOSTNAME = env("RENDER_EXTERNAL_HOSTNAME", default="")
-if RENDER_HOSTNAME:
-    ALLOWED_HOSTS += [RENDER_HOSTNAME, ".onrender.com"]
+# Automatically allow the Railway-assigned hostname (RAILWAY_PUBLIC_DOMAIN is
+# injected by Railway into every service's environment automatically).
+RAILWAY_HOSTNAME = env("RAILWAY_PUBLIC_DOMAIN", default="")
+if RAILWAY_HOSTNAME:
+    ALLOWED_HOSTS += [RAILWAY_HOSTNAME, ".up.railway.app"]
 
 
 # Supabase Auth Settings
 SUPABASE_URL = env("SUPABASE_URL", default="")
 SUPABASE_KEY = env("SUPABASE_KEY", default="")
 SUPABASE_SERVICE_ROLE_KEY = env("SUPABASE_SERVICE_ROLE_KEY", default="")
+SUPABASE_BUCKET_NAME = env("SUPABASE_BUCKET_NAME", default="classsync-media")
 
 INSTALLED_APPS = [
     # Django built-ins
@@ -110,11 +111,33 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STORAGE = {
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    },
-} if not DEBUG else {}
+
+# ---------------------------------------------------------------------------
+# File / Media Storage
+# In production (DEBUG=False) all uploaded files go to Supabase Storage so
+# they survive Railway container restarts (ephemeral local filesystem).
+# In development, files are saved to the local MEDIA_ROOT as usual.
+# ---------------------------------------------------------------------------
+if not DEBUG:
+    STORAGES = {
+        "default": {
+            # django-supabase-storage reads SUPABASE_URL, SUPABASE_KEY,
+            # and SUPABASE_BUCKET_NAME automatically from settings.
+            "BACKEND": "django_supabase_storage.SupabaseMediaStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
+else:
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / env("MEDIA_ROOT", default="media")

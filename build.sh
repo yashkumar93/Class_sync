@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Render build script — runs during each deploy
+# Build script — runs collectstatic + migrate (used locally or by CI)
 set -o errexit
 
 pip install --upgrade pip

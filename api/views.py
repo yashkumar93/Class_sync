@@ -154,10 +154,11 @@ def login_view(request):
 
     if not user:
         # Completely new user — create a minimal Django record
+        user_role = supabase_user.user_metadata.get("role", User.ROLE_STUDENT) if supabase_user.user_metadata else User.ROLE_STUDENT
         user = User.objects.create_user(
             username=supa_email.split("@")[0] if supa_email else str(supabase_user.id),
             email=supa_email,
-            role=User.ROLE_STUDENT,
+            role=user_role,
             supabase_uid=supabase_user.id,
         )
 

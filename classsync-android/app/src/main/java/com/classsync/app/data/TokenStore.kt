@@ -41,6 +41,9 @@ class TokenStore @Inject constructor(@ApplicationContext private val context: Co
     val role: StateFlow<String?> = _role
     val selectedSectionId = context.classSyncDataStore.data.map { it[selectedSectionKey] }
 
+    fun getRefreshToken(): String? = encryptedPreferences.getString(refreshKey, null)
+    fun getAccessToken(): String? = encryptedPreferences.getString(accessKey, null)
+
     suspend fun save(access: String, refresh: String, role: String) {
         encryptedPreferences.edit()
             .putString(accessKey, access)

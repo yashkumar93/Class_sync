@@ -12,11 +12,18 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
 
+import java.util.concurrent.TimeUnit
+
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
     @Provides @Singleton
-    fun provideClient(auth: AuthInterceptor): OkHttpClient = OkHttpClient.Builder().addInterceptor(auth).build()
+    fun provideClient(auth: AuthInterceptor): OkHttpClient = OkHttpClient.Builder()
+        .addInterceptor(auth)
+        .connectTimeout(60, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
+        .build()
 
     @Provides @Singleton
     fun provideApi(client: OkHttpClient): ApiService = Retrofit.Builder()

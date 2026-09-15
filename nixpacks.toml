@@ -1,0 +1,18 @@
+# Nixpacks build configuration for Railway
+# Docs: https://nixpacks.com/docs/config
+
+[variables]
+PYTHON_VERSION = "3.12"
+
+[phases.setup]
+# libpq-dev needed by psycopg2; gcc for C extensions
+aptPkgs = ["libpq-dev", "gcc"]
+
+[phases.install]
+cmds = ["pip install --upgrade pip", "pip install -r requirements.txt"]
+
+[phases.build]
+cmds = ["python manage.py collectstatic --no-input", "python manage.py migrate"]
+
+[start]
+cmd = "gunicorn classsync.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120"

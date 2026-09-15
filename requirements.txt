@@ -14,6 +14,7 @@ firebase-admin>=6.5
 # Postgres & Supabase
 psycopg2-binary>=2.9
 supabase>=2.3
+django-supabase-storage>=0.3  # media/file storage via Supabase Storage bucket
 
 # Production deployment
 gunicorn>=22.0

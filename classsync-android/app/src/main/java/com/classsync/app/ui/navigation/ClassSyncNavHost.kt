@@ -30,6 +30,8 @@ import com.classsync.app.ui.features.FeatureViewModel
 import com.classsync.app.ui.web.WebViewScreen
 import com.classsync.app.ui.notifications.NotificationScreen
 import com.classsync.app.ui.notifications.NotificationViewModel
+import com.classsync.app.ui.profile.ProfileScreen
+import com.classsync.app.ui.profile.ProfileViewModel
 import javax.inject.Inject
 
 @Composable
@@ -72,6 +74,7 @@ fun ClassSyncNavHost(notificationType: String? = null, notificationEvent: Int = 
                     "Notifications" -> nav.navigate("notifications/$role")
                     "Risk Flags" -> nav.navigate("notifications/$role?risks=true")
                     "Timetable" -> nav.navigate("web/timetable")
+                    "Profile" -> nav.navigate("profile")
                     "Admin panel" -> nav.navigate("web/admin")
                     else -> nav.navigate("feature/$target/$role")
                 }
@@ -129,6 +132,20 @@ fun ClassSyncNavHost(notificationType: String? = null, notificationEvent: Int = 
             val page = entry.arguments?.getString("page") ?: "timetable"
             val path = if (page == "admin") "admin-panel/" else "timetable/"
             WebViewScreen(if (page == "admin") "Admin panel" else "Timetable", BuildConfig.BASE_URL + path, accessToken) { nav.popBackStack() }
+        }
+        composable("profile") {
+            val vm: ProfileViewModel = hiltViewModel()
+            val state by vm.state.collectAsState()
+            ProfileScreen(
+                state = state,
+                onBack = { nav.popBackStack() },
+                onLogout = {
+                    vm.logout {
+                        nav.navigate("login") { popUpTo(0) { inclusive = true } }
+                    }
+                },
+                onRefresh = vm::loadProfile
+            )
         }
     }
 }

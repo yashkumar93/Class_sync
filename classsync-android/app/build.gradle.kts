@@ -25,7 +25,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Base URL for the Django API — change for production
+        // TODO: Update BASE_URL to Railway URL after first deploy (e.g. https://<name>.up.railway.app/)
         buildConfigField("String", "BASE_URL", "\"https://class-sync-ah7n.onrender.com/\"")
     }
 
@@ -59,12 +59,14 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // TODO: Update BASE_URL to Railway URL after first deploy
             buildConfigField("String", "BASE_URL", "\"https://class-sync-ah7n.onrender.com/\"")
             if (hasReleaseSigning) signingConfig = signingConfigs.getByName("release")
         }
         debug {
             isMinifyEnabled = false
             // 10.0.2.2 maps to host loopback on Android emulator
+            // TODO: Update BASE_URL to Railway URL after first deploy
             buildConfigField("String", "BASE_URL", "\"https://class-sync-ah7n.onrender.com/\"")
         }
     }
