@@ -2,8 +2,8 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
-    id("com.google.dagger.hilt.android")
     id("com.google.devtools.ksp")
+    id("com.google.dagger.hilt.android")
 }
 
 // Activate Firebase's Gradle plugin only once the project-specific
@@ -25,7 +25,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // TODO: Update BASE_URL to Railway URL after first deploy (e.g. https://<name>.up.railway.app/)
+        // ClassSync Backend URL on Render
         buildConfigField("String", "BASE_URL", "\"https://class-sync-ah7n.onrender.com/\"")
     }
 
@@ -59,14 +59,13 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // TODO: Update BASE_URL to Railway URL after first deploy
+            // ClassSync Backend URL on Render
             buildConfigField("String", "BASE_URL", "\"https://class-sync-ah7n.onrender.com/\"")
             if (hasReleaseSigning) signingConfig = signingConfigs.getByName("release")
         }
         debug {
             isMinifyEnabled = false
-            // 10.0.2.2 maps to host loopback on Android emulator
-            // TODO: Update BASE_URL to Railway URL after first deploy
+            // ClassSync Backend URL on Render
             buildConfigField("String", "BASE_URL", "\"https://class-sync-ah7n.onrender.com/\"")
         }
     }

@@ -26,8 +26,15 @@ ENV/
 .DS_Store
 Thumbs.db
 
+
+
+
+
+
+
 # Android / Gradle local state and signing material
 classsync-android/.gradle/
+classsync-android/.kotlin/
 classsync-android/build/
 classsync-android/app/build/
 classsync-android/local.properties

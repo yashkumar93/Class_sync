@@ -11,13 +11,18 @@ environ.Env.read_env(BASE_DIR / ".env")
 
 SECRET_KEY = env("SECRET_KEY", default="django-insecure-dev-key-change-in-prod")
 DEBUG = env("DEBUG")
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["127.0.0.1", "localhost", "10.0.2.2"])
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '10.0.2.2',    # Required for Android Emulator to connect to host machine
+    'testserver',
+    '*',           # Or allow all in local development
+]
 
-# Automatically allow the Railway-assigned hostname (RAILWAY_PUBLIC_DOMAIN is
-# injected by Railway into every service's environment automatically).
-RAILWAY_HOSTNAME = env("RAILWAY_PUBLIC_DOMAIN", default="")
-if RAILWAY_HOSTNAME:
-    ALLOWED_HOSTS += [RAILWAY_HOSTNAME, ".up.railway.app"]
+CSRF_TRUSTED_ORIGINS = [
+    "https://class-sync-ah7n.onrender.com",
+    "https://*.onrender.com",
+]
 
 
 # Supabase Auth Settings
