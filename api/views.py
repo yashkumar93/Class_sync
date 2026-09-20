@@ -7,6 +7,7 @@ functions from the Django apps rather than duplicating business logic.
 from datetime import date as date_type
 
 from django.db.models import Count, Q
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
@@ -1009,9 +1010,10 @@ def timetable_grid(request):
 
 
 # ── Health check ─────────────────────────────────────────────────────────────
-
-@api_view(["GET"])
-@permission_classes([AllowAny])
 def health_check(request):
-    """Unauthenticated endpoint used by keep-alive pings to prevent Render free-tier sleep."""
-    return Response({"status": "ok"})
+    """Unauthenticated endpoint used by keep-alive pings and uptime checks.
+    
+    Returns a direct JsonResponse to guarantee 200 OK regardless of whether
+    the request comes from curl, a mobile client, or a web browser.
+    """
+    return JsonResponse({"status": "ok"})
